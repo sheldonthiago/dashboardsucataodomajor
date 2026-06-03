@@ -17,6 +17,7 @@
     --green: #22c48a; --green-dim: rgba(34,196,138,0.12);
     --red: #f06060; --red-dim: rgba(240,96,96,0.12);
     --amber: #f0a030; --amber-dim: rgba(240,160,48,0.12);
+    --blue: #5b9cf6; --blue-dim: rgba(91,156,246,0.12);
     --radius: 10px; --radius-lg: 16px;
   }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -28,36 +29,77 @@
   }
   .logo { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
   .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
-  .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .last-update { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
-  .btn { display: inline-block; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: opacity .15s; }
-  .btn-green { background: var(--green); color: #0a1a12; }
-  .btn-outline { background: transparent; border: 1px solid var(--border2); color: var(--text); }
-  .btn:hover { opacity: .8; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: opacity .15s; font-family: 'DM Sans', sans-serif; text-decoration: none; }
+  .btn-green  { background: var(--green); color: #0a1a12; }
+  .btn-blue   { background: var(--blue);  color: #05112b; }
+  .btn-outline{ background: transparent; border: 1px solid var(--border2); color: var(--text); }
+  .btn-red    { background: var(--red);   color: #1a0505; }
+  .btn:hover  { opacity: .8; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
 
-  /* upload overlay */
-  #uploadOverlay {
+  /* overlays genéricos */
+  .overlay {
     display: none; position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,0.7); align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.75); align-items: center; justify-content: center;
     backdrop-filter: blur(4px);
   }
-  #uploadOverlay.open { display: flex; }
-  .upload-box {
+  .overlay.open { display: flex; }
+  .modal {
     background: var(--surface); border: 1px solid var(--border2);
-    border-radius: var(--radius-lg); padding: 2.5rem 2rem;
-    text-align: center; max-width: 420px; width: 90%;
+    border-radius: var(--radius-lg); padding: 2rem;
+    max-width: 460px; width: 90%; position: relative;
   }
-  .upload-box h3 { font-size: 16px; font-weight: 500; margin-bottom: 8px; }
-  .upload-box p { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+  .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .modal p  { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+  .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; }
+
+  /* dropzone */
   .dropzone {
     border: 1.5px dashed var(--border2); border-radius: var(--radius);
-    padding: 2rem; cursor: pointer; transition: border-color .2s, background .2s;
-    margin-bottom: 16px;
+    padding: 1.75rem; cursor: pointer; transition: border-color .2s, background .2s; margin-bottom: 14px; text-align: center;
   }
   .dropzone:hover, .dropzone.drag { border-color: var(--green); background: var(--green-dim); }
   .dropzone p { font-size: 13px; color: var(--muted); margin: 0; }
-  .overlay-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; }
   #fileInput { display: none; }
+
+  /* progress */
+  #progressWrap { display: none; margin-top: 12px; }
+  .pbar-bg   { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; }
+  .pbar-fill { height: 100%; background: var(--green); border-radius: 4px; transition: width .3s; width: 0%; }
+  #progressLabel { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* token form */
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .6px; }
+  .field input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 8px; padding: 9px 12px;
+    font-size: 13px; font-family: 'DM Mono', monospace; outline: none;
+  }
+  .field input:focus { border-color: var(--green); }
+  .field-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .field-hint a { color: var(--blue); }
+
+  /* publish status */
+  #publishStatus { font-size: 13px; margin-top: 12px; min-height: 20px; text-align: center; }
+
+  /* toast */
+  #toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(80px);
+    font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: 8px;
+    z-index: 300; transition: transform .3s ease; white-space: nowrap;
+    background: var(--green); color: #0a1a12;
+  }
+  #toast.show  { transform: translateX(-50%) translateY(0); }
+  #toast.error { background: var(--red); color: #fff; }
+
+  /* source badge */
+  .sbadge { font-size: 11px; padding: 3px 10px; border-radius: 5px; font-weight: 500; }
+  .sbadge-base  { background: var(--amber-dim); color: var(--amber); }
+  .sbadge-local { background: var(--green-dim); color: var(--green); }
+  .sbadge-gh    { background: var(--blue-dim);  color: var(--blue);  }
 
   /* main */
   #main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
@@ -94,41 +136,76 @@
   .b-red   { background: var(--red-dim);   color: var(--red); }
 
   .loading { text-align: center; padding: 4rem 2rem; color: var(--muted); font-size: 14px; }
-
   footer { text-align: center; padding: 2rem; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 1rem; }
-  @media(max-width: 600px) { header { padding: 1rem; } #main { padding: 1rem; } }
+  @media(max-width:600px){ header{padding:1rem;} #main{padding:1rem;} }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    <span class="logo-dot"></span>
-    Sucatão do Major — Cobertura de Fotos
-  </div>
+  <div class="logo"><span class="logo-dot"></span>Sucatão do Major — Cobertura de Fotos</div>
   <div class="header-right">
     <span class="last-update" id="lastUpdate">carregando...</span>
-    <button class="btn btn-outline" onclick="openUpload()">↑ Atualizar dados</button>
+    <span class="sbadge sbadge-base" id="sourceBadge"></span>
+    <button class="btn btn-outline" onclick="openUpload()">↑ Carregar .xlsx</button>
+    <button class="btn btn-blue"    id="btnPublish" style="display:none" onclick="openPublish()">☁ Publicar no GitHub</button>
+    <button class="btn btn-outline" onclick="openToken()" title="Configurar token GitHub">⚙</button>
   </div>
 </header>
 
-<!-- Upload overlay -->
-<div id="uploadOverlay">
-  <div class="upload-box" style="position:relative">
-    <button class="overlay-close" onclick="closeUpload()">×</button>
-    <h3>Atualizar dados</h3>
-    <p>Faça o upload do novo relatório de estoque.<br>Os dados serão carregados direto no navegador.</p>
-    <div class="dropzone" id="dz">
-      <p>Arraste o arquivo .xlsx aqui<br>ou clique para selecionar</p>
-    </div>
+<!-- UPLOAD OVERLAY -->
+<div class="overlay" id="uploadOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeUpload()">×</button>
+    <h3>Carregar novo relatório</h3>
+    <p>Faça upload do .xlsx exportado do sistema. Os dados ficam salvos no navegador e você pode publicar no GitHub em seguida.</p>
+    <div class="dropzone" id="dz"><p>Arraste o arquivo .xlsx aqui<br>ou clique para selecionar</p></div>
     <label class="btn btn-green" for="fileInput" style="display:block;text-align:center">Selecionar arquivo .xlsx</label>
     <input type="file" id="fileInput" accept=".xlsx,.xls">
+    <div id="progressWrap">
+      <div class="pbar-bg"><div class="pbar-fill" id="progressFill"></div></div>
+      <div id="progressLabel"></div>
+    </div>
   </div>
 </div>
 
+<!-- PUBLISH OVERLAY -->
+<div class="overlay" id="publishOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closePublish()">×</button>
+    <h3>Publicar no GitHub</h3>
+    <p>Isso vai enviar o <code>data.json</code> atualizado para o repositório <strong>sheldonthiago/dashboarcadastroibr</strong>. Qualquer pessoa que abrir o site verá os dados novos.</p>
+    <button class="btn btn-blue" id="btnConfirmPublish" style="width:100%;justify-content:center" onclick="publishToGitHub()">☁ Confirmar publicação</button>
+    <div id="publishStatus"></div>
+  </div>
+</div>
+
+<!-- TOKEN OVERLAY -->
+<div class="overlay" id="tokenOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeToken()">×</button>
+    <h3>Token do GitHub</h3>
+    <p>O token é necessário para publicar o <code>data.json</code> no repositório. É salvo apenas no seu navegador.</p>
+    <div class="field">
+      <label>Personal Access Token</label>
+      <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+      <div class="field-hint">
+        Gere em: <a href="https://github.com/settings/tokens/new?scopes=repo&description=dashboard-foto" target="_blank">github.com/settings/tokens</a>
+        — marque o escopo <strong>repo</strong>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-green" style="flex:1;justify-content:center" onclick="saveToken()">Salvar token</button>
+      <button class="btn btn-red"   onclick="clearToken()">Apagar</button>
+    </div>
+    <div id="tokenStatus" style="font-size:12px;color:var(--muted);margin-top:10px;text-align:center"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
 <div id="main">
   <div class="loading" id="loading">Carregando dados...</div>
-
   <div id="dashboard" style="display:none">
     <div class="kpi-grid" id="kpis"></div>
     <div class="controls">
@@ -145,7 +222,7 @@
         </div>
       </div>
       <div style="position:relative;width:100%;height:320px;">
-        <canvas id="barChart" role="img" aria-label="Cadastros diários com e sem foto"></canvas>
+        <canvas id="barChart"></canvas>
       </div>
     </div>
     <div class="card">
@@ -160,111 +237,305 @@
   </div>
 </div>
 
-<footer>Sucatão do Major · dados carregados do data.json</footer>
+<footer>Sucatão do Major · sheldonthiago/dashboarcadastroibr</footer>
 
 <script>
-let allData = [];
-let chartInst = null;
+const GITHUB_USER = 'sheldonthiago';
+const GITHUB_REPO = 'dashboarcadastroibr';
+const GITHUB_FILE = 'data.json';
+const LS_DATA     = 'sucatao_data_v1';
+const LS_TOKEN    = 'sucatao_gh_token';
 
-/* ── carrega data.json ao abrir ── */
-fetch('data.json')
-  .then(r => { if (!r.ok) throw new Error('not found'); return r.json(); })
-  .then(json => {
-    allData = json.rows;
-    document.getElementById('lastUpdate').textContent = 'Atualizado: ' + json.updated;
-    init();
-  })
-  .catch(() => {
-    document.getElementById('loading').textContent = 'Nenhum dado encontrado. Faça o upload do arquivo .xlsx.';
-    openUpload();
-  });
+let allData     = [];
+let pendingRows = null; // dados do último upload aguardando publicação
+let chartInst   = null;
 
-function init() {
+/* ════════════════════════════════
+   BOOTSTRAP
+════════════════════════════════ */
+function bootstrap() {
+  updateTokenUI();
+
+  const saved = tryLS(LS_DATA);
+  if (saved) {
+    allData = saved.rows;
+    setHeader('Atualizado: ' + saved.updated, 'local');
+    showDashboard();
+    return;
+  }
+  fetch('data.json?_=' + Date.now())
+    .then(r => { if (!r.ok) throw 0; return r.json(); })
+    .then(json => {
+      allData = json.rows;
+      setHeader('Atualizado: ' + json.updated, 'base');
+      showDashboard();
+    })
+    .catch(() => {
+      document.getElementById('loading').textContent = 'Nenhum dado. Faça upload do .xlsx.';
+      openUpload();
+    });
+}
+
+function tryLS(key) {
+  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : null; } catch { return null; }
+}
+function setLS(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) { console.warn(e); }
+}
+function delLS(key) { try { localStorage.removeItem(key); } catch {} }
+
+function setHeader(text, source) {
+  document.getElementById('lastUpdate').textContent = text;
+  const b = document.getElementById('sourceBadge');
+  const map = {
+    base:  ['sbadge-base',  '☁ repositório'],
+    local: ['sbadge-local', '💾 local'],
+    gh:    ['sbadge-gh',    '✓ GitHub'],
+  };
+  const [cls, label] = map[source] || map.base;
+  b.className = 'sbadge ' + cls;
+  b.textContent = label;
+}
+
+function showDashboard() {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
   buildMesSelect();
   render();
 }
 
-/* ── upload xlsx ── */
+/* ════════════════════════════════
+   UPLOAD XLSX
+════════════════════════════════ */
 function processFile(file) {
+  setProgress(true, 10, 'Lendo arquivo...');
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      setProgress(true, 40, 'Interpretando planilha...');
+      const wb = XLSX.read(e.target.result, { type:'array', cellDates:true });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      setProgress(true, 65, 'Agrupando por data...');
+      const rows = XLSX.utils.sheet_to_json(ws, { defval:'' });
       const keys = Object.keys(rows[0] || {});
       const colData = keys.find(k => /data.*cria/i.test(k)) || keys[2];
       const colFoto = keys.find(k => /^foto$/i.test(k)) || keys[20];
 
       const map = {};
       rows.forEach(r => {
-        const raw = r[colData];
-        if (!raw) return;
+        const raw = r[colData]; if (!raw) return;
         const dt = raw instanceof Date ? raw : new Date(raw);
         if (isNaN(dt)) return;
         const key = dt.toLocaleDateString('pt-BR');
-        if (!map[key]) map[key] = { d: key, sim: 0, total: 0, ts: dt.getTime() };
+        if (!map[key]) map[key] = { d:key, sim:0, total:0, ts:dt.getTime() };
         map[key].total++;
         if (String(r[colFoto]||'').trim().toUpperCase() === 'SIM') map[key].sim++;
       });
 
-      allData = Object.values(map).sort((a,b) => a.ts - b.ts);
+      setProgress(true, 85, 'Salvando localmente...');
+      const processed = Object.values(map).sort((a,b)=>a.ts-b.ts);
       const now = new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-      document.getElementById('lastUpdate').textContent = 'Atualizado: ' + now;
-      closeUpload();
-      init();
+
+      setLS(LS_DATA, { rows:processed, updated:now });
+      pendingRows = { rows:processed, updated:now };
+
+      allData = processed;
+      setHeader('Atualizado: ' + now, 'local');
+      setProgress(true, 100, 'Concluído!');
+
+      setTimeout(() => {
+        setProgress(false);
+        closeUpload();
+        showDashboard();
+        // mostra botão publicar
+        document.getElementById('btnPublish').style.display = 'inline-flex';
+        showToast('✓ Dados carregados! Clique em "Publicar no GitHub" para compartilhar.', false, 4000);
+      }, 400);
+
     } catch(err) {
+      setProgress(false);
       alert('Erro ao ler o arquivo.\n' + err.message);
     }
   };
   reader.readAsArrayBuffer(file);
 }
 
-/* ── filtros ── */
-function getMes(d) { const p = d.split('/'); return p[1]+'/'+p[2]; }
+function setProgress(show, pct, label) {
+  document.getElementById('progressWrap').style.display = show ? 'block' : 'none';
+  document.getElementById('progressFill').style.width = (pct||0) + '%';
+  document.getElementById('progressLabel').textContent = label || '';
+}
 
+/* ════════════════════════════════
+   PUBLICAR NO GITHUB
+════════════════════════════════ */
+async function publishToGitHub() {
+  const token = (tryLS(LS_TOKEN) || '').trim();
+  if (!token) {
+    closePublish();
+    showToast('⚠ Configure o token do GitHub primeiro (botão ⚙)', true);
+    openToken();
+    return;
+  }
+
+  const data = pendingRows || tryLS(LS_DATA);
+  if (!data) { showToast('Nenhum dado para publicar.', true); return; }
+
+  const btn = document.getElementById('btnConfirmPublish');
+  const status = document.getElementById('publishStatus');
+  btn.disabled = true;
+  status.style.color = 'var(--muted)';
+  status.textContent = '⏳ Buscando SHA do arquivo atual...';
+
+  const apiBase = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
+  const headers = {
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json',
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+
+  try {
+    // pega SHA atual do arquivo (necessário para update)
+    let sha = null;
+    const getResp = await fetch(apiBase, { headers });
+    if (getResp.ok) {
+      const info = await getResp.json();
+      sha = info.sha;
+    } else if (getResp.status !== 404) {
+      throw new Error('Erro ao acessar o repositório: ' + getResp.status);
+    }
+
+    status.textContent = '⏳ Enviando data.json...';
+
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+    const body = {
+      message: 'dashboard: atualiza data.json ' + data.updated,
+      content,
+      ...(sha ? { sha } : {})
+    };
+
+    const putResp = await fetch(apiBase, { method:'PUT', headers, body: JSON.stringify(body) });
+
+    if (putResp.ok) {
+      status.style.color = 'var(--green)';
+      status.textContent = '✓ Publicado com sucesso!';
+      setHeader('Atualizado: ' + data.updated, 'gh');
+      pendingRows = null;
+      document.getElementById('btnPublish').style.display = 'none';
+      setTimeout(() => {
+        closePublish();
+        showToast('✓ data.json publicado no GitHub!');
+      }, 800);
+    } else {
+      const err = await putResp.json();
+      throw new Error(err.message || putResp.status);
+    }
+  } catch(err) {
+    status.style.color = 'var(--red)';
+    status.textContent = '✗ Erro: ' + err.message;
+    btn.disabled = false;
+  }
+}
+
+/* ════════════════════════════════
+   TOKEN
+════════════════════════════════ */
+function updateTokenUI() {
+  const t = tryLS(LS_TOKEN);
+  const s = document.getElementById('tokenStatus');
+  if (s) s.textContent = t ? '✓ Token salvo no navegador' : 'Nenhum token configurado';
+}
+function saveToken() {
+  const val = document.getElementById('tokenInput').value.trim();
+  if (!val) { alert('Digite o token.'); return; }
+  setLS(LS_TOKEN, val);
+  document.getElementById('tokenInput').value = '';
+  document.getElementById('tokenStatus').textContent = '✓ Token salvo!';
+  showToast('✓ Token salvo com sucesso');
+  setTimeout(closeToken, 800);
+}
+function clearToken() {
+  if (!confirm('Apagar o token salvo?')) return;
+  delLS(LS_TOKEN);
+  updateTokenUI();
+  showToast('Token removido', true);
+}
+
+/* ════════════════════════════════
+   OVERLAYS
+════════════════════════════════ */
+function openUpload()   { document.getElementById('uploadOverlay').classList.add('open'); }
+function closeUpload()  { document.getElementById('uploadOverlay').classList.remove('open'); setProgress(false); }
+function openPublish()  { document.getElementById('publishStatus').textContent=''; document.getElementById('btnConfirmPublish').disabled=false; document.getElementById('publishOverlay').classList.add('open'); }
+function closePublish() { document.getElementById('publishOverlay').classList.remove('open'); }
+function openToken()    { updateTokenUI(); document.getElementById('tokenOverlay').classList.add('open'); }
+function closeToken()   { document.getElementById('tokenOverlay').classList.remove('open'); }
+
+/* fecha overlay clicando fora */
+['uploadOverlay','publishOverlay','tokenOverlay'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target.id === id) document.getElementById(id).classList.remove('open');
+  });
+});
+
+/* ════════════════════════════════
+   TOAST
+════════════════════════════════ */
+let toastTimer;
+function showToast(msg, isError=false, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'error show' : 'show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = '', dur);
+}
+
+/* ════════════════════════════════
+   FILTROS
+════════════════════════════════ */
+function getMes(d) { const p=d.split('/'); return p[1]+'/'+p[2]; }
 function buildMesSelect() {
   const sel = document.getElementById('selMes');
-  const meses = [...new Set(allData.map(r => getMes(r.d)))];
+  const meses = [...new Set(allData.map(r=>getMes(r.d)))];
   sel.innerHTML = '<option value="all">Todos os meses</option>';
-  const nomes = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const nomes=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   meses.forEach(m => {
-    const o = document.createElement('option');
-    const [mm,yyyy] = m.split('/');
-    o.value = m; o.textContent = nomes[parseInt(mm)] + ' ' + yyyy;
+    const o=document.createElement('option');
+    const [mm,yyyy]=m.split('/');
+    o.value=m; o.textContent=nomes[parseInt(mm)]+' '+yyyy;
     sel.appendChild(o);
   });
 }
-
 function filtered() {
-  const v = document.getElementById('selMes').value;
-  return v === 'all' ? allData : allData.filter(r => getMes(r.d) === v);
+  const v=document.getElementById('selMes').value;
+  return v==='all' ? allData : allData.filter(r=>getMes(r.d)===v);
 }
 
-/* ── render ── */
+/* ════════════════════════════════
+   RENDER
+════════════════════════════════ */
 function render() {
-  const data = filtered();
+  const data=filtered();
   renderKPIs(data); renderChart(data); renderTable(data);
-  document.getElementById('tagTotal').textContent = data.length + ' dias';
+  document.getElementById('tagTotal').textContent = data.length+' dias';
 }
 
 function renderKPIs(data) {
-  const totalSim = data.reduce((a,r)=>a+r.sim,0);
-  const totalAll = data.reduce((a,r)=>a+r.total,0);
-  const nao = totalAll - totalSim;
-  const pct = totalAll ? Math.round(totalSim/totalAll*100) : 0;
-  const maxDay = data.reduce((b,r)=>r.sim>b.sim?r:b,{sim:0,d:'-'});
-  const cor = pct>=90?'var(--green)':pct>=70?'var(--amber)':'var(--red)';
-  const items = [
-    {label:'Com foto',    val:totalSim.toLocaleString('pt-BR'), sub:'foto = SIM',  color:'var(--green)'},
-    {label:'Sem foto',    val:nao.toLocaleString('pt-BR'),      sub:'foto = NÃO',  color:'var(--red)'},
-    {label:'Total',       val:totalAll.toLocaleString('pt-BR'), sub:'cadastros',   color:'var(--muted)'},
-    {label:'Cobertura',   val:pct+'%',                          sub:'com foto',    color:cor},
-    {label:'Melhor dia',  val:maxDay.sim,                       sub:maxDay.d,      color:'var(--amber)'},
+  const totalSim=data.reduce((a,r)=>a+r.sim,0);
+  const totalAll=data.reduce((a,r)=>a+r.total,0);
+  const nao=totalAll-totalSim;
+  const pct=totalAll?Math.round(totalSim/totalAll*100):0;
+  const maxDay=data.reduce((b,r)=>r.sim>b.sim?r:b,{sim:0,d:'-'});
+  const cor=pct>=90?'var(--green)':pct>=70?'var(--amber)':'var(--red)';
+  const items=[
+    {label:'Com foto',   val:totalSim.toLocaleString('pt-BR'), sub:'foto = SIM', color:'var(--green)'},
+    {label:'Sem foto',   val:nao.toLocaleString('pt-BR'),      sub:'foto = NÃO', color:'var(--red)'},
+    {label:'Total',      val:totalAll.toLocaleString('pt-BR'), sub:'cadastros',  color:'var(--muted)'},
+    {label:'Cobertura',  val:pct+'%',                          sub:'com foto',   color:cor},
+    {label:'Melhor dia', val:maxDay.sim,                       sub:maxDay.d,     color:'var(--amber)'},
   ];
-  document.getElementById('kpis').innerHTML = items.map(i=>`
+  document.getElementById('kpis').innerHTML=items.map(i=>`
     <div class="kpi" style="--kpi-color:${i.color}">
       <div class="kpi-label">${i.label}</div>
       <div class="kpi-val">${i.val}</div>
@@ -274,18 +545,18 @@ function renderKPIs(data) {
 
 function renderChart(data) {
   if (chartInst) chartInst.destroy();
-  chartInst = new Chart(document.getElementById('barChart'), {
-    type: 'bar',
-    data: {
-      labels: data.map(r=>r.d),
-      datasets: [
+  chartInst=new Chart(document.getElementById('barChart'),{
+    type:'bar',
+    data:{
+      labels:data.map(r=>r.d),
+      datasets:[
         {label:'Com foto', data:data.map(r=>r.sim),         backgroundColor:'#22c48a', borderRadius:3, borderSkipped:false},
         {label:'Sem foto', data:data.map(r=>r.total-r.sim), backgroundColor:'#f06060', borderRadius:3, borderSkipped:false}
       ]
     },
-    options: {
+    options:{
       responsive:true, maintainAspectRatio:false,
-      plugins: {
+      plugins:{
         legend:{display:false},
         tooltip:{
           backgroundColor:'#1e2023', borderColor:'rgba(255,255,255,0.1)', borderWidth:1,
@@ -301,15 +572,15 @@ function renderChart(data) {
         }
       },
       scales:{
-        x:{stacked:true, ticks:{color:'#666',font:{size:10},maxRotation:60,autoSkip:true,maxTicksLimit:28}, grid:{color:'rgba(255,255,255,0.04)'}},
-        y:{stacked:true, ticks:{color:'#666',font:{size:11}}, grid:{color:'rgba(255,255,255,0.04)'}, beginAtZero:true}
+        x:{stacked:true,ticks:{color:'#666',font:{size:10},maxRotation:60,autoSkip:true,maxTicksLimit:28},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{stacked:true,ticks:{color:'#666',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true}
       }
     }
   });
 }
 
 function renderTable(data) {
-  document.getElementById('tBody').innerHTML = [...data].reverse().map(r=>{
+  document.getElementById('tBody').innerHTML=[...data].reverse().map(r=>{
     const nao=r.total-r.sim;
     const pct=r.total?Math.round(r.sim/r.total*100):0;
     const cls=pct===100?'b-green':pct>=80?'b-amber':'b-red';
@@ -323,23 +594,20 @@ function renderTable(data) {
   }).join('');
 }
 
-/* ── overlay ── */
-function openUpload()  { document.getElementById('uploadOverlay').classList.add('open'); }
-function closeUpload() { document.getElementById('uploadOverlay').classList.remove('open'); }
-
-document.getElementById('fileInput').addEventListener('change', e => {
-  if (e.target.files[0]) processFile(e.target.files[0]);
-  e.target.value = '';
+/* ════════════════════════════════
+   EVENTOS
+════════════════════════════════ */
+document.getElementById('fileInput').addEventListener('change', e=>{
+  if(e.target.files[0]) processFile(e.target.files[0]); e.target.value='';
 });
-
-const dz = document.getElementById('dz');
-dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('drag');});
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',  e=>{e.preventDefault();dz.classList.add('drag');});
 dz.addEventListener('dragleave', ()=>dz.classList.remove('drag'));
-dz.addEventListener('drop', e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files[0])processFile(e.dataTransfer.files[0]);});
-dz.addEventListener('click', ()=>document.getElementById('fileInput').click());
-
+dz.addEventListener('drop',      e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files[0])processFile(e.dataTransfer.files[0]);});
+dz.addEventListener('click',     ()=>document.getElementById('fileInput').click());
 document.getElementById('selMes').addEventListener('change', render);
-document.getElementById('uploadOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('uploadOverlay')) closeUpload(); });
+
+bootstrap();
 </script>
 </body>
 </html>
