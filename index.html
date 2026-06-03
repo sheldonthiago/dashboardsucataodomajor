@@ -263,11 +263,28 @@ function bootstrap() {
     showDashboard();
     return;
   }
-  fetch('data.json?_=' + Date.now())
+  // Busca via API do GitHub (sem cache) para garantir dado sempre atualizado
+  const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
+  fetch(apiUrl, {
+    headers: {
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Cache-Control': 'no-cache'
+    }
+  })
     .then(r => { if (!r.ok) throw 0; return r.json(); })
-    .then(json => {
-      allData = json.rows;
-      setHeader('Atualizado: ' + json.updated, 'base');
+    .then(info => {
+      // conteúdo vem em base64
+      const json = JSON.parse(decodeURIComponent(escape(atob(info.content.replace(/\n/g,'')))));
+      // só usa o repositório se for mais recente que o salvo localmente
+      const saved = tryLS(LS_DATA);
+      if (saved) {
+        allData = saved.rows;
+        setHeader('Atualizado: ' + saved.updated, 'local');
+      } else {
+        allData = json.rows;
+        setHeader('Atualizado: ' + json.updated, 'base');
+      }
       showDashboard();
     })
     .catch(() => {
