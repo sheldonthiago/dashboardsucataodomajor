@@ -352,7 +352,7 @@ async function boot(){
   if(tok) hdrs['Authorization']='Bearer '+tok;
 
   const sf=tryLS(LS_F);
-  if(sf){fotosDaily=sf.rows;fotosProds=sf.produtos||[];setHdr('Atualizado: '+sf.updated,'local');initF();}
+  if(sf){fotosDaily=sf.rows;fotosProds=sf.produtos||[];setHdr('Atualizado: '+sf.updated,'local');initF();document.getElementById('btnPub').style.display='inline-flex';}
   else await ghLoad('data.json',hdrs,d=>{fotosDaily=d.rows;fotosProds=d.produtos||[];setHdr('Atualizado: '+d.updated,'base');initF();},()=>{document.getElementById('loadF').textContent='Nenhum dado. Faça upload do .xlsx.';});
 
   const sv=tryLS(LS_V);
@@ -902,7 +902,7 @@ async function publishGH(){
   st.textContent='✓ '+okCount+' arquivo(s) publicado(s) com sucesso!';
   setHdr('Publicado: '+ts(),'gh');
   pendPub={};
-  document.getElementById('btnPub').style.display='none';
+  // mantém botão visível para permitir republicar a qualquer momento
   setTimeout(()=>{closePublish();showToast('✓ GitHub atualizado!');},800);
 }
 
