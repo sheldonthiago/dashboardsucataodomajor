@@ -236,7 +236,7 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
         <span class="tag" id="tagV"></span>
       </div>
       <div class="two-col">
-        <div class="card" style="margin-bottom:0">
+        <div class="card">
           <div class="card-hdr">
             <span class="card-title">Vendas por dia (R$)</span>
             <div class="legend"><span><span class="ldot" style="background:#22c48a"></span>Balcão</span><span><span class="ldot" style="background:#5b9cf6"></span>ML</span></div>
@@ -244,7 +244,7 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
           <div style="position:relative;width:100%;height:240px"><canvas id="chartVD"></canvas></div>
           <div class="chart-hint">Clique em uma barra para filtrar os produtos daquele dia</div>
         </div>
-        <div class="card" style="margin-bottom:0">
+        <div class="card">
           <div class="card-hdr"><span class="card-title">Por canal</span></div>
           <div style="position:relative;width:100%;height:240px"><canvas id="chartVC"></canvas></div>
           <div class="chart-hint">Clique no gráfico para filtrar por canal</div>
@@ -253,7 +253,7 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
       <div class="card">
         <div class="card-hdr"><span class="card-title">Produtos vendidos</span></div>
         <div class="tw">
-          <table><thead><tr><th>Data</th><th>Produto</th><th>Canal</th><th>Valor</th><th>Desconto</th><th>Total</th></tr></thead>
+          <table><thead><tr><th>Data</th><th>Código</th><th>Produto</th><th>Canal</th><th>Valor</th><th>Desconto</th><th>Total</th></tr></thead>
           <tbody id="tV"></tbody></table>
         </div>
         <div class="pagination" id="pagV"></div>
@@ -297,7 +297,7 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
       <div class="card">
         <div class="card-hdr"><span class="card-title">Produtos cancelados</span></div>
         <div class="tw">
-          <table><thead><tr><th>Data</th><th>Produto</th><th>Canal</th><th>Valor</th><th>Desconto</th><th>Total</th></tr></thead>
+          <table><thead><tr><th>Data</th><th>Código</th><th>Produto</th><th>Canal</th><th>Valor</th><th>Desconto</th><th>Total</th><th>Motivo</th></tr></thead>
           <tbody id="tC"></tbody></table>
         </div>
         <div class="pagination" id="pagC"></div>
@@ -352,16 +352,16 @@ async function boot(){
   if(tok) hdrs['Authorization']='Bearer '+tok;
 
   const sf=tryLS(LS_F);
-  if(sf){fotosDaily=sf.rows;fotosProds=sf.produtos||[];setHdr('Atualizado: '+sf.updated,'local');initF();document.getElementById('btnPub').style.display='inline-flex';}
-  else await ghLoad('data.json',hdrs,d=>{fotosDaily=d.rows;fotosProds=d.produtos||[];setHdr('Atualizado: '+d.updated,'base');initF();},()=>{document.getElementById('loadF').textContent='Nenhum dado. Faça upload do .xlsx.';});
+  if(sf){fotosDaily=sf.rows;fotosProds=sf.produtos||[];setHdr('Atualizado: '+sf.updated,'local');initF();showBtnPub();}
+  else await ghLoad('data.json',hdrs,d=>{fotosDaily=d.rows;fotosProds=d.produtos||[];setHdr('Atualizado: '+d.updated,'base');initF();showBtnPub();},()=>{document.getElementById('loadF').textContent='Nenhum dado. Faça upload do .xlsx.';});
 
   const sv=tryLS(LS_V);
-  if(sv){vendasDaily=sv.rows;vendasProds=sv.produtos||[];initV();}
-  else await ghLoad('vendas.json',hdrs,d=>{vendasDaily=d.rows;vendasProds=d.produtos||[];initV();},()=>{document.getElementById('loadV').textContent='Nenhum dado. Faça upload do .xlsx.';});
+  if(sv){vendasDaily=sv.rows;vendasProds=sv.produtos||[];initV();showBtnPub();}
+  else await ghLoad('vendas.json',hdrs,d=>{vendasDaily=d.rows;vendasProds=d.produtos||[];initV();showBtnPub();},()=>{document.getElementById('loadV').textContent='Nenhum dado. Faça upload do .xlsx.';});
 
   const sc=tryLS(LS_C);
-  if(sc){cancelDaily=sc.rows;cancelProds=sc.produtos||[];initC();}
-  else await ghLoad('canceladas.json',hdrs,d=>{cancelDaily=d.rows;cancelProds=d.produtos||[];initC();},()=>{initCEmpty();});
+  if(sc){cancelDaily=sc.rows;cancelProds=sc.produtos||[];initC();showBtnPub();}
+  else await ghLoad('canceladas.json',hdrs,d=>{cancelDaily=d.rows;cancelProds=d.produtos||[];initC();showBtnPub();},()=>{initCEmpty();});
 }
 
 async function ghLoad(file,hdrs,ok,fail){
@@ -391,6 +391,10 @@ function switchTab(n,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+n).classList.add('active');
+  // re-renderiza gráficos ao entrar na aba (canvas pode ter ficado oculto)
+  if(n==='fotos'&&fotosDaily.length)renderF();
+  if(n==='vendas'&&vendasDaily.length)renderV();
+  if(n==='canceladas'&&cancelDaily.length)renderC();
 }
 
 /* ════════════════════════════════
@@ -437,8 +441,10 @@ function renderF(){
   ]);
 
   // gráfico (highlight barra clicada)
-  if(cF) cF.destroy();
-  cF=new Chart(document.getElementById('chartF'),{
+  if(cF){cF.destroy();cF=null;}
+  const canvasF=document.getElementById('chartF');
+  if(!canvasF){return;}
+  cF=new Chart(canvasF,{
     type:'bar',
     data:{
       labels:daily.map(r=>r.d),
@@ -551,8 +557,10 @@ function renderV(){
   const dBal=dias.map(d=>daily.filter(r=>r.d===d&&r.canal==='Balcão').reduce((a,r)=>a+r.total,0));
   const dML =dias.map(d=>daily.filter(r=>r.d===d&&r.canal==='Mercado Livre').reduce((a,r)=>a+r.total,0));
 
-  if(cVD) cVD.destroy();
-  cVD=new Chart(document.getElementById('chartVD'),{
+  if(cVD){cVD.destroy();cVD=null;}
+  const canvasVD=document.getElementById('chartVD');
+  if(!canvasVD){return;}
+  cVD=new Chart(canvasVD,{
     type:'bar',
     data:{
       labels:dias,
@@ -584,8 +592,10 @@ function renderV(){
   const mlFull =daily.filter(r=>r.canal==='Mercado Livre').reduce((a,r)=>a+r.total,0);
   const totFull=balFull+mlFull;
 
-  if(cVC) cVC.destroy();
-  cVC=new Chart(document.getElementById('chartVC'),{
+  if(cVC){cVC.destroy();cVC=null;}
+  const canvasVC=document.getElementById('chartVC');
+  if(!canvasVC){return;}
+  cVC=new Chart(canvasVC,{
     type:'doughnut',
     data:{
       labels:['Balcão','Mercado Livre'],
@@ -639,6 +649,7 @@ function renderPageV(prods){
   document.getElementById('tV').innerHTML=slice.map(r=>`
     <tr>
       <td class="num">${r.d}</td>
+      <td class="num" style="color:var(--muted)">${r.cod||'—'}</td>
       <td class="prod-name" title="${esc(r.prod)}">${esc(r.prod)||'—'}</td>
       <td><span class="badge ${r.canal==='Balcão'?'bg':'bb'}">${r.canal==='Mercado Livre'?'ML':r.canal}</span></td>
       <td class="num">R$ ${fmt(r.val)}</td>
@@ -765,17 +776,18 @@ function procFotos(rows){
   setHdr('Atualizado: '+now,'local');setP(100,'Concluído!');
   const addedF=newDaily.length;const prevDaysF=prevF?prevF.rows.length:0;
   const newDaysF=mergedDaily.length-prevDaysF;
-  setTimeout(()=>{closeUpload();clickDiaF=null;initF();document.getElementById('btnPub').style.display='inline-flex';showToast('✓ Cadastro: +'+addedF+' dias mesclados (total '+mergedDaily.length+')',false,4000);},400);
+  setTimeout(()=>{closeUpload();clickDiaF=null;initF();showBtnPub();showToast('✓ Cadastro: +'+addedF+' dias mesclados (total '+mergedDaily.length+')',false,4000);},400);
 }
 
 function procVendas(rows){
   const keys=Object.keys(rows[0]||{});
-  const cD =keys.find(k=>/^data$/i.test(k))||'Data';
-  const cL =keys.find(k=>/local.*venda/i.test(k))||'Local de Venda';
-  const cP =keys.find(k=>/^produto$/i.test(k))||'Produto';
-  const cVl=keys.find(k=>/^valor de venda$/i.test(k))||'Valor de Venda';
-  const cDc=keys.find(k=>/^desconto$/i.test(k))||'Desconto';
-  const cT =keys.find(k=>/valores.*totais/i.test(k))||'Valores Totais';
+  const cD  =keys.find(k=>/^data$/i.test(k))||'Data';
+  const cL  =keys.find(k=>/local.*venda/i.test(k))||'Local de Venda';
+  const cP  =keys.find(k=>/^produto$/i.test(k))||'Produto';
+  const cVl =keys.find(k=>/^valor de venda$/i.test(k))||'Valor de Venda';
+  const cDc =keys.find(k=>/^desconto$/i.test(k))||'Desconto';
+  const cT  =keys.find(k=>/valores.*totais/i.test(k))||'Valores Totais';
+  const cCod=keys.find(k=>/^código$/i.test(k))||'Código';
   const n=s=>parseFloat(String(s||'0').replace(/\./g,'').replace(',','.'))||0;
   const map={};const prods=[];
   rows.forEach(r=>{
@@ -800,7 +812,8 @@ function procVendas(rows){
     if(!map[key][local]) map[key][local]={d:key,canal:local,total:0,ts:tsVal};
     const tot=n(r[cT]);
     map[key][local].total=Math.round((map[key][local].total+tot)*100)/100;
-    prods.push({d:key,canal:local,prod:String(r[cP]||'').trim(),val:n(r[cVl]),desc:n(r[cDc]),tot,ts:tsVal});
+    const cod=String(r[cCod]||'').trim().replace(/\.0$/,'');
+    prods.push({d:key,canal:local,cod,prod:String(r[cP]||'').trim(),val:n(r[cVl]),desc:n(r[cDc]),tot,ts:tsVal});
   });
   // ordena produtos por data
   const newDaily=Object.values(map).flatMap(m=>Object.values(m)).sort((a,b)=>a.ts-b.ts);
@@ -816,7 +829,7 @@ function procVendas(rows){
   const obj={rows:mergedDaily,produtos:mergedProds,updated:now};
   setLS(LS_V,obj);pendPub.vendas=obj;vendasDaily=mergedDaily;vendasProds=mergedProds;
   setP(100,'Concluído!');
-  setTimeout(()=>{closeUpload();clickDiaV=null;clickCanalV=null;initV();document.getElementById('btnPub').style.display='inline-flex';showToast('✓ Vendas: '+mergedProds.length+' itens no total',false,4000);},400);
+  setTimeout(()=>{closeUpload();clickDiaV=null;clickCanalV=null;initV();showBtnPub();showToast('✓ Vendas: '+mergedProds.length+' itens no total',false,4000);},400);
 }
 
 const ts=()=>new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -907,6 +920,11 @@ async function publishGH(){
 }
 
 /* ── TOKEN ── */
+
+
+function showBtnPub(){
+  document.getElementById('btnPub').style.display='inline-flex';
+}
 
 function clearData(type){
   const labels={fotos:'dados de Cadastro',vendas:'dados de Vendas',canceladas:'dados de Canceladas',all:'TODOS os dados locais'};
@@ -1003,8 +1021,10 @@ function renderC(){
   const dBal=dias.map(d=>daily.filter(r=>r.d===d&&r.canal==='Balcão').reduce((a,r)=>a+r.total,0));
   const dML =dias.map(d=>daily.filter(r=>r.d===d&&r.canal==='Mercado Livre').reduce((a,r)=>a+r.total,0));
 
-  if(cCD)cCD.destroy();
-  cCD=new Chart(document.getElementById('chartCD'),{
+  if(cCD){cCD.destroy();cCD=null;}
+  const canvasCD=document.getElementById('chartCD');
+  if(!canvasCD){return;}
+  cCD=new Chart(canvasCD,{
     type:'bar',
     data:{labels:dias,datasets:[
       {label:'Balcão',       data:dBal,backgroundColor:dias.map(d=>clickDiaC&&d!==clickDiaC?'rgba(240,96,96,0.25)':'#f06060'),borderRadius:3,borderSkipped:false},
@@ -1031,8 +1051,10 @@ function renderC(){
   const mlFull =daily.filter(r=>r.canal==='Mercado Livre').reduce((a,r)=>a+r.total,0);
   const totFull=balFull+mlFull;
 
-  if(cCC)cCC.destroy();
-  cCC=new Chart(document.getElementById('chartCC'),{
+  if(cCC){cCC.destroy();cCC=null;}
+  const canvasCC=document.getElementById('chartCC');
+  if(!canvasCC){return;}
+  cCC=new Chart(canvasCC,{
     type:'doughnut',
     data:{labels:['Balcão','Mercado Livre'],datasets:[{
       data:[balFull,mlFull],
@@ -1079,11 +1101,13 @@ function renderPageC(prods){
   document.getElementById('tC').innerHTML=slice.map(r=>`
     <tr>
       <td class="num">${r.d}</td>
+      <td class="num" style="color:var(--muted)">${r.cod||'—'}</td>
       <td class="prod-name" title="${esc(r.prod)}">${esc(r.prod)||'—'}</td>
       <td><span class="badge ${r.canal==='Balcão'?'br':'bp'}">${r.canal==='Mercado Livre'?'ML':r.canal}</span></td>
       <td class="num">R$ ${fmt(r.val)}</td>
       <td class="num" style="color:${r.desc>0?'var(--amber)':'var(--muted)'}">R$ ${fmt(r.desc)}</td>
       <td class="num" style="color:var(--red)">R$ ${fmt(r.tot)}</td>
+      <td style="font-size:12px;color:var(--muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.motivo)||'—'}</td>
     </tr>`).join('');
   renderPag('pagC',prods.length,pC,p=>{pC=p;renderPageC(prods);});
 }
@@ -1096,7 +1120,8 @@ function procCanceladas(rows){
   const cVl =keys.find(k=>/^valor de venda$/i.test(k))||'Valor de Venda';
   const cDc =keys.find(k=>/^desconto$/i.test(k))||'Desconto';
   const cT  =keys.find(k=>/valores.*totais/i.test(k))||'Valores Totais';
-
+  const cCod=keys.find(k=>/^código$/i.test(k))||'Código';
+  const cMot=keys.find(k=>/motivo/i.test(k))||'Motivo do cancelamento';
   const n=s=>parseFloat(String(s||'0').replace(/\./g,'').replace(',','.'))||0;
   const map={};const prods=[];
   rows.forEach(r=>{
@@ -1119,7 +1144,9 @@ function procCanceladas(rows){
     if(!map[key][local])map[key][local]={d:key,canal:local,total:0,ts:tsVal};
     const tot=n(r[cT]);
     map[key][local].total=Math.round((map[key][local].total+tot)*100)/100;
-    prods.push({d:key,canal:local,prod:String(r[cP]||'').trim(),val:n(r[cVl]),desc:n(r[cDc]),tot,ts:tsVal});
+    const cod=String(r[cCod]||'').trim().replace(/\.0$/,'');
+    const motivo=String(r[cMot]||'').trim();
+    prods.push({d:key,canal:local,cod,prod:String(r[cP]||'').trim(),val:n(r[cVl]),desc:n(r[cDc]),tot,ts:tsVal,motivo});
   });
   const newDaily=Object.values(map).flatMap(m=>Object.values(m)).sort((a,b)=>a.ts-b.ts);
   prods.sort((a,b)=>b.ts-a.ts);
@@ -1134,7 +1161,7 @@ function procCanceladas(rows){
   const obj={rows:mergedDaily,produtos:mergedProds,updated:now};
   setLS(LS_C,obj);pendPub.canceladas=obj;cancelDaily=mergedDaily;cancelProds=mergedProds;
   setP(100,'Concluído!');
-  setTimeout(()=>{closeUpload();initC();document.getElementById('btnPub').style.display='inline-flex';showToast('✓ Canceladas: '+mergedProds.length+' itens no total',false,4000);},400);
+  setTimeout(()=>{closeUpload();initC();showBtnPub();showToast('✓ Canceladas: '+mergedProds.length+' itens no total',false,4000);},400);
 }
 
 boot();
