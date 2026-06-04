@@ -683,16 +683,25 @@ function procVendas(rows){
     const local=String(r[cL]||'').trim();
     if(!local||local==='nan'||local==='NaN') return;
     const raw=r[cD];if(!raw)return;
-    let dt;
-    if(raw instanceof Date) dt=raw;
-    else { const s=String(raw).trim(); dt=s.includes('/')?new Date(s.split('/').reverse().join('-')):new Date(s); }
-    if(isNaN(dt)) return;
-    const key=dt.toLocaleDateString('pt-BR');
+    let key,tsVal;
+    if(raw instanceof Date){
+      key=raw.toLocaleDateString('pt-BR'); tsVal=raw.getTime();
+    } else {
+      const s=String(raw).trim();
+      if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
+        key=s;
+        const[dd,mm,yy]=s.split('/');
+        tsVal=new Date(+yy,+mm-1,+dd,12,0,0).getTime();
+      } else {
+        const dt2=new Date(s); if(isNaN(dt2)) return;
+        key=dt2.toLocaleDateString('pt-BR'); tsVal=dt2.getTime();
+      }
+    }
     if(!map[key]) map[key]={};
-    if(!map[key][local]) map[key][local]={d:key,canal:local,total:0,ts:dt.getTime()};
+    if(!map[key][local]) map[key][local]={d:key,canal:local,total:0,ts:tsVal};
     const tot=n(r[cT]);
     map[key][local].total=Math.round((map[key][local].total+tot)*100)/100;
-    prods.push({d:key,canal:local,prod:String(r[cP]||'').trim(),val:n(r[cVl]),desc:n(r[cDc]),tot,ts:dt.getTime()});
+    prods.push({d:key,canal:local,prod:String(r[cP]||'').trim(),val:n(r[cVl]),desc:n(r[cDc]),tot,ts:tsVal});
   });
   // ordena produtos por data
   prods.sort((a,b)=>b.ts-a.ts);
