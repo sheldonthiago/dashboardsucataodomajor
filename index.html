@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sucatão do Major — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0f11;--surface:#161719;--surface2:#1e2023;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#f0f0ee;--muted:#888986;
+  --green:#22c48a;--green-dim:rgba(34,196,138,0.12);
+  --red:#f06060;--red-dim:rgba(240,96,96,0.12);
+  --amber:#f0a030;--amber-dim:rgba(240,160,48,0.12);
+  --blue:#5b9cf6;--blue-dim:rgba(91,156,246,0.12);
+  --purple:#a78bfa;--purple-dim:rgba(167,139,250,0.12);
+  --r:10px;--rl:16px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 2rem;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;background:var(--bg);gap:1rem;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;letter-spacing:-0.3px}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+.hright{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lupdate{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s;font-family:'DM Sans',sans-serif}
+.btn-green{background:var(--green);color:#0a1a12}.btn-blue{background:var(--blue);color:#05112b}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text)}.btn-red{background:var(--red);color:#fff}
+.btn:hover{opacity:.8}.btn:disabled{opacity:.4;cursor:not-allowed}
+.tabs{display:flex;gap:2px;padding:0 2rem;border-bottom:1px solid var(--border);background:var(--bg)}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2px solid transparent;transition:color .15s,border-color .15s;font-family:'DM Sans',sans-serif}
+.tab:hover{color:var(--text)}.tab.active{color:var(--text);border-bottom-color:var(--green)}
+.overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:2rem;max-width:460px;width:90%;position:relative}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:6px}.modal p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+.mclose{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer}
+.dropzone{border:1.5px dashed var(--border2);border-radius:var(--r);padding:1.75rem;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:14px;text-align:center}
+.dropzone:hover,.dropzone.drag{border-color:var(--green);background:var(--green-dim)}
+.dropzone p{font-size:13px;color:var(--muted);margin:0}
+.fi{display:none}
+.pw{display:none;margin-top:12px}
+.pb-bg{background:var(--surface2);border-radius:4px;height:6px;overflow:hidden}
+.pb-fill{height:100%;background:var(--green);border-radius:4px;transition:width .3s;width:0%}
+.plabel{font-size:12px;color:var(--muted);margin-top:6px}
+.field{margin-bottom:14px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px}
+.field input{width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:'DM Mono',monospace;outline:none}
+.field input:focus{border-color:var(--green)}
+.fhint{font-size:11px;color:var(--muted);margin-top:4px}.fhint a{color:var(--blue)}
+#pubStatus{font-size:13px;margin-top:12px;min-height:20px;text-align:center}
+#toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(80px);font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;z-index:300;transition:transform .3s;white-space:nowrap;background:var(--green);color:#0a1a12}
+#toast.show{transform:translateX(-50%) translateY(0)}#toast.err{background:var(--red);color:#fff}
+.sbadge{font-size:11px;padding:3px 10px;border-radius:5px;font-weight:500}
+.sb-base{background:var(--amber-dim);color:var(--amber)}.sb-local{background:var(--green-dim);color:var(--green)}.sb-gh{background:var(--blue-dim);color:var(--blue)}
+#main{padding:2rem;max-width:1280px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:2rem}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.25rem;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc,var(--green))}
+.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px}
+.kpi-val{font-size:24px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-1px;color:var(--kc,var(--text))}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:1.25rem}
+.controls label{font-size:13px;color:var(--muted)}
+select{background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:6px 11px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none}
+select:focus{border-color:var(--green)}
+.tag{padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500;background:var(--green-dim);color:var(--green)}
+.active-filter{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500;background:var(--blue-dim);color:var(--blue);cursor:pointer;border:1px solid rgba(91,156,246,0.3)}
+.active-filter:hover{background:var(--red-dim);color:var(--red);border-color:rgba(240,96,96,0.3)}
+.search-wrap{position:relative;flex:1;max-width:280px}
+.search-wrap input{width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:6px 11px 6px 32px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none}
+.search-wrap input:focus{border-color:var(--green)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;margin-bottom:1.5rem}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px}
+.card-title{font-size:14px;font-weight:500}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem}
+@media(max-width:700px){.two-col{grid-template-columns:1fr}}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:5px}
+.ldot{width:8px;height:8px;border-radius:2px}
+.chart-hint{font-size:11px;color:var(--muted);margin-top:6px;text-align:center}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 13px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);border-bottom:1px solid var(--border);font-weight:500;white-space:nowrap}
+td{padding:8px 13px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.num{font-family:'DM Mono',monospace}
+.badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;font-family:'DM Mono',monospace}
+.bg{background:var(--green-dim);color:var(--green)}.br{background:var(--red-dim);color:var(--red)}
+.ba{background:var(--amber-dim);color:var(--amber)}.bb{background:var(--blue-dim);color:var(--blue)}
+.bp{background:var(--purple-dim);color:var(--purple)}
+.prod-name{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pagination{display:flex;align-items:center;gap:6px;margin-top:1rem;justify-content:flex-end;flex-wrap:wrap}
+.pagination button{background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.pagination button:hover{border-color:var(--green)}.pagination button.cur{border-color:var(--green);color:var(--green)}
+.pagination button:disabled{opacity:.35;cursor:not-allowed}
+.pinfo{font-size:12px;color:var(--muted)}
+.loading{text-align:center;padding:4rem 2rem;color:var(--muted);font-size:14px}
+footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:1rem}
+@media(max-width:600px){header{padding:1rem}#main{padding:1rem}.tabs{padding:0 1rem}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span class="logo-dot"></span>Sucatão do Major</div>
+  <div class="hright">
+    <span class="lupdate" id="lastUpdate">carregando...</span>
+    <span class="sbadge sb-base" id="srcBadge"></span>
+    <button class="btn btn-outline" onclick="openUpload('fotos')">↑ Fotos</button>
+    <button class="btn btn-outline" onclick="openUpload('vendas')">↑ Vendas</button>
+    <button class="btn btn-outline" onclick="openUpload('canceladas')">↑ Canceladas</button>
+    <button class="btn btn-blue" id="btnPub" style="display:none" onclick="openPublish()">☁ Publicar</button>
+    <button class="btn btn-outline" onclick="openToken()">⚙</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('fotos',this)">📋 Cadastro</button>
+  <button class="tab" onclick="switchTab('vendas',this)">✅ Vendas Realizadas</button>
+  <button class="tab" onclick="switchTab('canceladas',this)">❌ Canceladas</button>
+</div>
+
+<!-- UPLOAD -->
+<div class="overlay" id="ovUpload">
+  <div class="modal">
+    <button class="mclose" onclick="closeUpload()">×</button>
+    <h3 id="upTitle">Carregar relatório</h3>
+    <p id="upDesc"></p>
+    <div class="dropzone" id="dz"><p>Arraste o .xlsx aqui<br>ou clique para selecionar</p></div>
+    <label class="btn btn-green" for="fi" style="display:block;text-align:center">Selecionar arquivo</label>
+    <input type="file" class="fi" id="fi" accept=".xlsx,.xls">
+    <div class="pw" id="pw"><div class="pb-bg"><div class="pb-fill" id="pbf"></div></div><div class="plabel" id="pbl"></div></div>
+  </div>
+</div>
+
+<!-- PUBLISH -->
+<div class="overlay" id="ovPub">
+  <div class="modal">
+    <button class="mclose" onclick="closePublish()">×</button>
+    <h3>Publicar no GitHub</h3>
+    <p>Envia os dados para <strong>sheldonthiago/dashboarcadastroibr</strong>.</p>
+    <button class="btn btn-blue" id="btnConfPub" style="width:100%;justify-content:center" onclick="publishGH()">☁ Confirmar</button>
+    <div id="pubStatus"></div>
+  </div>
+</div>
+
+<!-- TOKEN -->
+<div class="overlay" id="ovToken">
+  <div class="modal">
+    <button class="mclose" onclick="closeToken()">×</button>
+    <h3>Token do GitHub</h3>
+    <p>Necessário para publicar. Salvo apenas no seu navegador.</p>
+    <div class="field">
+      <label>Personal Access Token</label>
+      <input type="password" id="tokInput" placeholder="ghp_...">
+      <div class="fhint">Gere em: <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank">github.com/settings/tokens</a> — escopo <strong>repo</strong></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-green" style="flex:1;justify-content:center" onclick="saveTok()">Salvar</button>
+      <button class="btn btn-red" onclick="clearTok()">Apagar</button>
+    </div>
+    <div id="tokStatus" style="font-size:12px;color:var(--muted);margin-top:10px;text-align:center"></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:1.25rem 0">
+    <div style="font-size:13px;font-weight:500;margin-bottom:8px">Limpar dados locais</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Remove os dados salvos no navegador. Útil para recomeçar do zero ou forçar recarga do GitHub.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="clearData('fotos')">🗑 Cadastro</button>
+      <button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="clearData('vendas')">🗑 Vendas</button>
+      <button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="clearData('canceladas')">🗑 Canceladas</button>
+      <button class="btn btn-red" style="font-size:12px;padding:6px 12px" onclick="clearData('all')">🗑 Tudo</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="main">
+
+  <!-- ABA FOTOS -->
+  <div class="page active" id="page-fotos">
+    <div class="loading" id="loadF">Carregando...</div>
+    <div id="dashF" style="display:none">
+      <div class="kpi-grid" id="kpiF"></div>
+      <div class="controls">
+        <label>Mês:</label><select id="selMF"></select>
+        <label>Foto:</label>
+        <select id="selFotoF">
+          <option value="all">Todos</option>
+          <option value="SIM">Com foto</option>
+          <option value="NÃO">Sem foto</option>
+        </select>
+        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchF" placeholder="Buscar produto..."></div>
+        <span id="activeFilterF" style="display:none"></span>
+        <span class="tag" id="tagF"></span>
+      </div>
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Cadastros por dia</span>
+          <div class="legend"><span><span class="ldot" style="background:#22c48a"></span>Com foto</span><span><span class="ldot" style="background:#f06060"></span>Sem foto</span></div>
+        </div>
+        <div style="position:relative;width:100%;height:260px"><canvas id="chartF"></canvas></div>
+        <div class="chart-hint">Clique em uma barra para filtrar os produtos daquele dia</div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Produtos cadastrados</span></div>
+        <div class="tw">
+          <table><thead><tr><th>Data</th><th>Produto</th><th>Marca</th><th>Modelo</th><th>Foto</th></tr></thead>
+          <tbody id="tF"></tbody></table>
+        </div>
+        <div class="pagination" id="pagF"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA VENDAS -->
+  <div class="page" id="page-vendas">
+    <div class="loading" id="loadV">Carregando...</div>
+    <div id="dashV" style="display:none">
+      <div class="kpi-grid" id="kpiV"></div>
+      <div class="controls">
+        <label>Mês:</label><select id="selMV"></select>
+        <label>Canal:</label>
+        <select id="selCanal">
+          <option value="all">Todos</option>
+          <option value="Balcão">Balcão</option>
+          <option value="Mercado Livre">Mercado Livre</option>
+        </select>
+        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchV" placeholder="Buscar produto..."></div>
+        <span id="activeFilterV" style="display:none"></span>
+        <span class="tag" id="tagV"></span>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Vendas por dia (R$)</span>
+            <div class="legend"><span><span class="ldot" style="background:#22c48a"></span>Balcão</span><span><span class="ldot" style="background:#5b9cf6"></span>ML</span></div>
+          </div>
+          <div style="position:relative;width:100%;height:240px"><canvas id="chartVD"></canvas></div>
+          <div class="chart-hint">Clique em uma barra para filtrar os produtos daquele dia</div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Por canal</span></div>
+          <div style="position:relative;width:100%;height:240px"><canvas id="chartVC"></canvas></div>
+          <div class="chart-hint">Clique no gráfico para filtrar por canal</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Produtos vendidos</span></div>
+        <div class="tw">
+          <table><thead><tr><th>Data</th><th>Código</th><th>Produto</th><th>Canal</th><th>Valor</th><th>Desconto</th><th>Total</th></tr></thead>
+          <tbody id="tV"></tbody></table>
+        </div>
+        <div class="pagination" id="pagV"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+  <!-- ABA CANCELADAS -->
+  <div class="page" id="page-canceladas">
+    <div class="loading" id="loadC">Carregando...</div>
+    <div id="dashC" style="display:none">
+      <div class="kpi-grid" id="kpiC"></div>
+      <div class="controls">
+        <label>Mês:</label><select id="selMC"></select>
+        <label>Canal:</label>
+        <select id="selCanalC">
+          <option value="all">Todos</option>
+          <option value="Balcão">Balcão</option>
+          <option value="Mercado Livre">Mercado Livre</option>
+        </select>
+        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchC" placeholder="Buscar produto..."></div>
+        <span id="activeFilterC" style="display:none"></span>
+        <span class="tag" id="tagC"></span>
+      </div>
+      <div class="two-col">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-hdr">
+            <span class="card-title">Cancelamentos por dia (R$)</span>
+            <div class="legend"><span><span class="ldot" style="background:#f06060"></span>Balcão</span><span><span class="ldot" style="background:#a78bfa"></span>ML</span></div>
+          </div>
+          <div style="position:relative;width:100%;height:240px"><canvas id="chartCD"></canvas></div>
+          <div class="chart-hint">Clique em uma barra para filtrar os produtos daquele dia</div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-hdr"><span class="card-title">Por canal</span></div>
+          <div style="position:relative;width:100%;height:240px"><canvas id="chartCC"></canvas></div>
+          <div class="chart-hint">Clique para filtrar por canal</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Produtos cancelados</span></div>
+        <div class="tw">
+          <table><thead><tr><th>Data</th><th>Código</th><th>Produto</th><th>Canal</th><th>Valor</th><th>Desconto</th><th>Total</th><th>Motivo</th></tr></thead>
+          <tbody id="tC"></tbody></table>
+        </div>
+        <div class="pagination" id="pagC"></div>
+      </div>
+    </div>
+    <div id="noDataC" style="display:none;text-align:center;padding:4rem 2rem">
+      <div style="font-size:48px;margin-bottom:1rem">❌</div>
+      <div style="font-size:15px;font-weight:500;margin-bottom:8px">Nenhuma venda cancelada</div>
+      <div style="font-size:13px;color:var(--muted)">Faça upload do relatório de cancelamentos clicando em <strong>↑ Canceladas</strong></div>
+    </div>
+  </div>
+
+
+<footer>Sucatão do Major · sheldonthiago/dashboarcadastroibr</footer>
+
+<script>
+const GH_USER='sheldonthiago',GH_REPO='dashboarcadastroibr';
+const LS_F='sucatao_fotos_v2',LS_V='sucatao_vendas_v2',LS_C='sucatao_canc_v1',LS_T='sucatao_gh_token';
+const PER_PAGE=50;
+
+let fotosProds=[],fotosDaily=[];
+let vendasProds=[],vendasDaily=[];
+let pendPub={};
+let cF=null,cVD=null,cVC=null;
+let upType='fotos';
+let pF=1,pV=1,pC=1;
+
+let cancelProds=[],cancelDaily=[];
+let cCD=null,cCC=null;
+let clickDiaC=null,clickCanalC=null;
+// filtros dinâmicos (clique no gráfico)
+let clickDiaF=null; // data clicada no gráfico fotos
+let clickDiaV=null; // data clicada no gráfico vendas
+let clickCanalV=null; // canal clicado no donut
+
+/* ── LS ── */
+const tryLS=k=>{try{const r=localStorage.getItem(k);return r?JSON.parse(r):null}catch{return null}};
+const setLS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){console.warn(e)}};
+const delLS=k=>{try{localStorage.removeItem(k)}catch{}};
+
+/* ── HELPERS DE DATA ── */
+// d = 'DD/MM/YYYY' → 'MM/YYYY'
+const getMes=d=>{ const p=d.split('/'); return p[1]+'/'+p[2]; };
+// data no formato DD/MM/YYYY para timestamp (para ordenação)
+const toTs=d=>{ const[dd,mm,yy]=d.split('/'); return new Date(`${yy}-${mm}-${dd}`).getTime(); };
+
+/* ── BOOTSTRAP ── */
+async function boot(){
+  updTokUI();
+  const tok=(tryLS(LS_T)||'').trim();
+  const hdrs={'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Cache-Control':'no-cache'};
+  if(tok) hdrs['Authorization']='Bearer '+tok;
+
+  const sf=tryLS(LS_F);
+  if(sf){fotosDaily=sf.rows;fotosProds=sf.produtos||[];setHdr('Atualizado: '+sf.updated,'local');initF();showBtnPub();}
+  else await ghLoad('data.json',hdrs,d=>{fotosDaily=d.rows;fotosProds=d.produtos||[];setHdr('Atualizado: '+d.updated,'base');initF();showBtnPub();},()=>{document.getElementById('loadF').textContent='Nenhum dado. Faça upload do .xlsx.';});
+
+  const sv=tryLS(LS_V);
+  if(sv){vendasDaily=sv.rows;vendasProds=sv.produtos||[];initV();showBtnPub();}
+  else await ghLoad('vendas.json',hdrs,d=>{vendasDaily=d.rows;vendasProds=d.produtos||[];initV();showBtnPub();},()=>{document.getElementById('loadV').textContent='Nenhum dado. Faça upload do .xlsx.';});
+
+  const sc=tryLS(LS_C);
+  if(sc){cancelDaily=sc.rows;cancelProds=sc.produtos||[];initC();showBtnPub();}
+  else await ghLoad('canceladas.json',hdrs,d=>{cancelDaily=d.rows;cancelProds=d.produtos||[];initC();showBtnPub();},()=>{initCEmpty();});
+}
+
+async function ghLoad(file,hdrs,ok,fail){
+  const api=`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${file}`;
+  try{
+    const r=await fetch(api,{headers:hdrs});if(!r.ok)throw 0;
+    const i=await r.json();
+    // decodifica base64 UTF-8 seguro
+      const b64=i.content.replace(/\n/g,'');
+      const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+      ok(JSON.parse(new TextDecoder().decode(bytes)));
+  }catch{
+    try{const r2=await fetch(file+'?_='+Date.now());if(!r2.ok)throw 0;ok(await r2.json());}
+    catch{fail();}
+  }
+}
+
+function setHdr(t,s){
+  document.getElementById('lastUpdate').textContent=t;
+  const b=document.getElementById('srcBadge');
+  const m={base:['sb-base','☁ repositório'],local:['sb-local','💾 local'],gh:['sb-gh','✓ GitHub']};
+  const[c,l]=m[s]||m.base;b.className='sbadge '+c;b.textContent=l;
+}
+
+/* ── TABS ── */
+function switchTab(n,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+n).classList.add('active');
+  // re-renderiza gráficos ao entrar na aba (canvas pode ter ficado oculto)
+  if(n==='fotos'&&fotosDaily.length)renderF();
+  if(n==='vendas'&&vendasDaily.length)renderV();
+  if(n==='canceladas'&&cancelDaily.length)renderC();
+}
+
+/* ════════════════════════════════
+   ABA FOTOS
+════════════════════════════════ */
+function initF(){
+  document.getElementById('loadF').style.display='none';
+  document.getElementById('dashF').style.display='block';
+  buildSel('selMF', [...new Set(fotosProds.map(r=>getMes(r.d)))]);
+  renderF();
+}
+
+function renderF(){
+  const mes=document.getElementById('selMF').value;
+  const foto=document.getElementById('selFotoF').value;
+  const q=(document.getElementById('searchF').value||'').toLowerCase().trim();
+
+  // filtra produtos
+  let prods=fotosProds.filter(r=>{
+    if(mes!=='all' && getMes(r.d)!==mes) return false;
+    if(foto!=='all' && r.foto!==foto) return false;
+    if(q && !r.prod.toLowerCase().includes(q)) return false;
+    if(clickDiaF && r.d!==clickDiaF) return false;
+    return true;
+  });
+
+  // daily para gráfico (só filtro de mês, sem clique)
+  const daily=fotosDaily.filter(r=>mes==='all'||getMes(r.d)===mes);
+
+  // KPIs baseados nos produtos filtrados
+  const sim=prods.filter(r=>r.foto==='SIM').length;
+  const tot=prods.length;
+  const nao=tot-sim;
+  const pct=tot?Math.round(sim/tot*100):0;
+  const cor=pct>=90?'var(--green)':pct>=70?'var(--amber)':'var(--red)';
+  // melhor dia (do daily não filtrado por clique)
+  const mx=daily.reduce((b,r)=>r.sim>b.sim?r:b,{sim:0,d:'-'});
+  renderKPI('kpiF',[
+    {l:'Com foto',  v:sim.toLocaleString('pt-BR'), s:'SIM',        c:'var(--green)'},
+    {l:'Sem foto',  v:nao.toLocaleString('pt-BR'), s:'NÃO',        c:'var(--red)'},
+    {l:'Total',     v:tot.toLocaleString('pt-BR'), s:'produtos',   c:'var(--muted)'},
+    {l:'Cobertura', v:pct+'%',                     s:'com foto',   c:cor},
+    {l:'Melhor dia',v:mx.sim,                      s:mx.d,         c:'var(--amber)'},
+  ]);
+
+  // gráfico (highlight barra clicada)
+  if(cF){cF.destroy();cF=null;}
+  const canvasF=document.getElementById('chartF');
+  if(!canvasF){return;}
+  cF=new Chart(canvasF,{
+    type:'bar',
+    data:{
+      labels:daily.map(r=>r.d),
+      datasets:[
+        {label:'Com foto', data:daily.map(r=>r.sim),
+          backgroundColor:daily.map(r=>clickDiaF&&r.d!==clickDiaF?'rgba(34,196,138,0.25)':'#22c48a'),
+          borderRadius:3,borderSkipped:false},
+        {label:'Sem foto', data:daily.map(r=>r.total-r.sim),
+          backgroundColor:daily.map(r=>clickDiaF&&r.d!==clickDiaF?'rgba(240,96,96,0.25)':'#f06060'),
+          borderRadius:3,borderSkipped:false}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e2023',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#f0f0ee',bodyColor:'#888',
+        callbacks:{title:ctx=>ctx[0].label,afterBody:items=>{const t=items.reduce((s,i)=>s+i.raw,0);const s=items.find(i=>i.datasetIndex===0)?.raw||0;return'Total: '+t+' | '+Math.round(s/t*100)+'% com foto';}}}},
+      scales:{
+        x:{stacked:true,ticks:{color:'#666',font:{size:10},maxRotation:60,autoSkip:true,maxTicksLimit:26},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{stacked:true,ticks:{color:'#666',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}
+      },
+      onClick:(evt)=>{
+        const pts=cF.getElementsAtEventForMode(evt,'index',{intersect:false},true);
+        if(!pts.length) return;
+        const dia=daily[pts[0].index].d;
+        if(clickDiaF===dia){clickDiaF=null;}else{clickDiaF=dia;}
+        updFilterBadgeF();
+        renderF();
+      }
+    }
+  });
+
+  updFilterBadgeF();
+  pF=1;
+  document.getElementById('tagF').textContent=prods.length+' produtos';
+  renderPageF(prods);
+}
+
+function updFilterBadgeF(){
+  const el=document.getElementById('activeFilterF');
+  if(clickDiaF){
+    el.style.display='inline-flex';
+    el.className='active-filter';
+    el.innerHTML='📅 '+clickDiaF+' <span>×</span>';
+    el.onclick=()=>{clickDiaF=null;renderF();};
+  } else {
+    el.style.display='none';
+  }
+}
+
+function renderPageF(prods){
+  const slice=prods.slice((pF-1)*PER_PAGE,pF*PER_PAGE);
+  document.getElementById('tF').innerHTML=slice.map(r=>`
+    <tr>
+      <td class="num">${r.d}</td>
+      <td class="prod-name" title="${esc(r.prod)}">${esc(r.prod)||'—'}</td>
+      <td>${esc(r.marca)||'—'}</td>
+      <td>${esc(r.modelo)||'—'}</td>
+      <td><span class="badge ${r.foto==='SIM'?'bg':'br'}">${r.foto}</span></td>
+    </tr>`).join('');
+  renderPag('pagF',prods.length,pF,p=>{pF=p;renderPageF(prods);});
+}
+
+/* ════════════════════════════════
+   ABA VENDAS
+════════════════════════════════ */
+function initV(){
+  document.getElementById('loadV').style.display='none';
+  document.getElementById('dashV').style.display='block';
+  // build meses a partir dos próprios produtos para garantir consistência
+  buildSel('selMV', [...new Set(vendasProds.map(r=>getMes(r.d)))]);
+  renderV();
+}
+
+function renderV(){
+  const mes=document.getElementById('selMV').value;
+  const canal=document.getElementById('selCanal').value;
+  const q=(document.getElementById('searchV').value||'').toLowerCase().trim();
+
+  // filtra produtos com TODOS os filtros
+  let prods=vendasProds.filter(r=>{
+    if(mes!=='all' && getMes(r.d)!==mes) return false;
+    if(canal!=='all' && r.canal!==canal) return false;
+    if(q && !r.prod.toLowerCase().includes(q)) return false;
+    if(clickDiaV && r.d!==clickDiaV) return false;
+    if(clickCanalV && r.canal!==clickCanalV) return false;
+    return true;
+  });
+
+  // daily filtrado por mês para gráficos (sem clique)
+  const daily=vendasDaily.filter(r=>mes==='all'||getMes(r.d)===mes);
+
+  // KPIs dos produtos filtrados
+  const totBal=prods.filter(r=>r.canal==='Balcão').reduce((a,r)=>a+r.tot,0);
+  const totML =prods.filter(r=>r.canal==='Mercado Livre').reduce((a,r)=>a+r.tot,0);
+  const totGeral=totBal+totML;
+  // melhor dia do daily
+  const dayMap={};daily.forEach(r=>{dayMap[r.d]=(dayMap[r.d]||0)+r.total;});
+  const bestD=Object.entries(dayMap).reduce((b,[d,v])=>v>b[1]?[d,v]:b,['—',0]);
+
+  renderKPI('kpiV',[
+    {l:'Total geral',    v:'R$ '+fmt(totGeral), s:'todos canais',                               c:'var(--green)'},
+    {l:'Balcão',         v:'R$ '+fmt(totBal),   s:pct(totBal,totGeral)+'% do total',            c:'var(--green)'},
+    {l:'Mercado Livre',  v:'R$ '+fmt(totML),    s:pct(totML,totGeral)+'% do total',             c:'var(--blue)'},
+    {l:'Melhor dia',     v:'R$ '+fmt(bestD[1]), s:bestD[0],                                     c:'var(--amber)'},
+    {l:'Itens vendidos', v:prods.length,        s:'no período',                                 c:'var(--muted)'},
+  ]);
+
+  // gráfico barras por dia
+  const dias=[...new Set(daily.map(r=>r.d))].sort((a,b)=>toTs(a)-toTs(b));
+  const dBal=dias.map(d=>daily.filter(r=>r.d===d&&r.canal==='Balcão').reduce((a,r)=>a+r.total,0));
+  const dML =dias.map(d=>daily.filter(r=>r.d===d&&r.canal==='Mercado Livre').reduce((a,r)=>a+r.total,0));
+
+  if(cVD){cVD.destroy();cVD=null;}
+  const canvasVD=document.getElementById('chartVD');
+  if(!canvasVD){return;}
+  cVD=new Chart(canvasVD,{
+    type:'bar',
+    data:{
+      labels:dias,
+      datasets:[
+        {label:'Balcão',       data:dBal, backgroundColor:dias.map(d=>clickDiaV&&d!==clickDiaV?'rgba(34,196,138,0.25)':'#22c48a'), borderRadius:3,borderSkipped:false},
+        {label:'Mercado Livre',data:dML,  backgroundColor:dias.map(d=>clickDiaV&&d!==clickDiaV?'rgba(91,156,246,0.25)':'#5b9cf6'), borderRadius:3,borderSkipped:false}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e2023',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#f0f0ee',bodyColor:'#888',
+        callbacks:{label:ctx=>ctx.dataset.label+': R$ '+fmt(ctx.raw)}}},
+      scales:{
+        x:{stacked:true,ticks:{color:'#666',font:{size:10},maxRotation:60,autoSkip:true,maxTicksLimit:26},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{stacked:true,ticks:{color:'#666',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}
+      },
+      onClick:(evt)=>{
+        const pts=cVD.getElementsAtEventForMode(evt,'index',{intersect:false},true);
+        if(!pts.length) return;
+        const dia=dias[pts[0].index];
+        if(clickDiaV===dia){clickDiaV=null;}else{clickDiaV=dia;clickCanalV=null;}
+        updFilterBadgeV();renderV();
+      }
+    }
+  });
+
+  // donut canal
+  const balFull=daily.filter(r=>r.canal==='Balcão').reduce((a,r)=>a+r.total,0);
+  const mlFull =daily.filter(r=>r.canal==='Mercado Livre').reduce((a,r)=>a+r.total,0);
+  const totFull=balFull+mlFull;
+
+  if(cVC){cVC.destroy();cVC=null;}
+  const canvasVC=document.getElementById('chartVC');
+  if(!canvasVC){return;}
+  cVC=new Chart(canvasVC,{
+    type:'doughnut',
+    data:{
+      labels:['Balcão','Mercado Livre'],
+      datasets:[{
+        data:[balFull,mlFull],
+        backgroundColor:[
+          clickCanalV&&clickCanalV!=='Balcão'       ?'rgba(34,196,138,0.25)':'#22c48a',
+          clickCanalV&&clickCanalV!=='Mercado Livre' ?'rgba(91,156,246,0.25)':'#5b9cf6'
+        ],
+        borderWidth:0,hoverOffset:4
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{color:'#888',font:{size:12},padding:14}},
+        tooltip:{backgroundColor:'#1e2023',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#f0f0ee',bodyColor:'#888',
+          callbacks:{label:ctx=>' R$ '+fmt(ctx.raw)+' ('+pct(ctx.raw,totFull)+'%)'}}
+      },
+      onClick:(evt)=>{
+        const pts=cVC.getElementsAtEventForMode(evt,'nearest',{intersect:true},true);
+        if(!pts.length) return;
+        const label=cVC.data.labels[pts[0].index];
+        if(clickCanalV===label){clickCanalV=null;}else{clickCanalV=label;clickDiaV=null;document.getElementById('selCanal').value='all';}
+        updFilterBadgeV();renderV();
+      }
+    }
+  });
+
+  updFilterBadgeV();
+  pV=1;
+  document.getElementById('tagV').textContent=prods.length+' itens';
+  renderPageV(prods);
+}
+
+function updFilterBadgeV(){
+  const el=document.getElementById('activeFilterV');
+  if(clickDiaV||clickCanalV){
+    el.style.display='inline-flex';
+    el.className='active-filter';
+    const txt=clickDiaV?('📅 '+clickDiaV):(clickCanalV==='Balcão'?'🏪 Balcão':'🛒 Mercado Livre');
+    el.innerHTML=txt+' <span>×</span>';
+    el.onclick=()=>{clickDiaV=null;clickCanalV=null;updFilterBadgeV();renderV();};
+  } else {
+    el.style.display='none';
+  }
+}
+
+function renderPageV(prods){
+  const slice=prods.slice((pV-1)*PER_PAGE,pV*PER_PAGE);
+  document.getElementById('tV').innerHTML=slice.map(r=>`
+    <tr>
+      <td class="num">${r.d}</td>
+      <td class="num" style="color:var(--muted)">${r.cod||'—'}</td>
+      <td class="prod-name" title="${esc(r.prod)}">${esc(r.prod)||'—'}</td>
+      <td><span class="badge ${r.canal==='Balcão'?'bg':'bb'}">${r.canal==='Mercado Livre'?'ML':r.canal}</span></td>
+      <td class="num">R$ ${fmt(r.val)}</td>
+      <td class="num" style="color:${r.desc>0?'var(--amber)':'var(--muted)'}">R$ ${fmt(r.desc)}</td>
+      <td class="num" style="color:var(--green)">R$ ${fmt(r.tot)}</td>
+    </tr>`).join('');
+  renderPag('pagV',prods.length,pV,p=>{pV=p;renderPageV(prods);});
+}
+
+/* ── UTILS ── */
+const fmt=n=>Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct=(v,t)=>t?Math.round(v/t*100):0;
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function buildSel(id,meses){
+  const sel=document.getElementById(id);
+  const nm=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  sel.innerHTML='<option value="all">Todos os meses</option>';
+  meses.forEach(m=>{
+    const o=document.createElement('option');
+    const[mm,yy]=m.split('/');
+    o.value=m;o.textContent=nm[parseInt(mm)]+' '+yy;sel.appendChild(o);
+  });
+}
+
+function renderKPI(id,items){
+  document.getElementById(id).innerHTML=items.map(i=>`
+    <div class="kpi" style="--kc:${i.c}">
+      <div class="kpi-label">${i.l}</div>
+      <div class="kpi-val">${i.v}</div>
+      <div class="kpi-sub">${i.s}</div>
+    </div>`).join('');
+}
+
+function renderPag(id,total,cur,cb){
+  const pages=Math.ceil(total/PER_PAGE);
+  if(pages<=1){document.getElementById(id).innerHTML='';return;}
+  const start=(cur-1)*PER_PAGE+1,end=Math.min(cur*PER_PAGE,total);
+  let h=`<span class="pinfo">${start}–${end} de ${total}</span>`;
+  h+=`<button ${cur===1?'disabled':''} onclick="(${cb.toString()})(${cur-1})">‹</button>`;
+  for(let p=1;p<=pages;p++){
+    if(p===1||p===pages||Math.abs(p-cur)<=1)
+      h+=`<button class="${p===cur?'cur':''}" onclick="(${cb.toString()})(${p})">${p}</button>`;
+    else if(Math.abs(p-cur)===2)
+      h+=`<span style="color:var(--muted);padding:0 2px">…</span>`;
+  }
+  h+=`<button ${cur===pages?'disabled':''} onclick="(${cb.toString()})(${cur+1})">›</button>`;
+  document.getElementById(id).innerHTML=h;
+}
+
+/* ── UPLOAD ── */
+function openUpload(t){
+  upType=t;
+  document.getElementById('upTitle').textContent=t==='fotos'?'Carregar estoque (cadastro)':t==='vendas'?'Carregar relatório de vendas':'Carregar cancelamentos';
+  document.getElementById('upDesc').textContent=t==='fotos'?'Arquivo com colunas: Data de Criação, Produto, Foto (SIM/NÃO).':t==='vendas'?'Arquivo com colunas: Data, Produto, Local de Venda, Valor de Venda, Desconto, Valores Totais.':'Relatório de vendas canceladas com as mesmas colunas do relatório de vendas.';
+  document.getElementById('pbf').style.width='0%';
+  document.getElementById('pw').style.display='none';
+  document.getElementById('ovUpload').classList.add('open');
+}
+function closeUpload(){document.getElementById('ovUpload').classList.remove('open');}
+
+function procFile(file){
+  setP(10,'Lendo arquivo...');
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      setP(40,'Interpretando planilha...');
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+      setP(65,'Processando...');
+      upType==='fotos'?procFotos(rows):upType==='vendas'?procVendas(rows):procCanceladas(rows);
+    }catch(err){setP(0,'');alert('Erro: '+err.message);}
+  };
+  r.readAsArrayBuffer(file);
+}
+
+
+/* ── MERGE: acrescenta novos dados sem substituir os existentes ── */
+function mergeDaily(existing, incoming){
+  // usa _key se disponível (d|canal para vendas), senão só d
+  const map={};
+  existing.forEach(r=>map[r._key||r.d]={...r});
+  incoming.forEach(r=>map[r._key||r.d]={...r});
+  return Object.values(map)
+    .map(r=>{const o={...r};delete o._key;return o;})
+    .sort((a,b)=>toTs(a.d)-toTs(b.d));
+}
+
+function mergeProds(existing, incoming){
+  // produtos: usa chave d+prod para deduplicar
+  // incoming tem prioridade (versão mais nova do mesmo item no mesmo dia)
+  const map=new Map();
+  existing.forEach(r=>map.set(r.d+'|'+r.prod,r));
+  incoming.forEach(r=>map.set(r.d+'|'+r.prod,r));
+  return [...map.values()].sort((a,b)=>toTs(b.d)-toTs(a.d));
+}
+
+function procFotos(rows){
+  const keys=Object.keys(rows[0]||{});
+  const cD =keys.find(k=>/data.*cria/i.test(k))  || keys[2];
+  const cFt=keys.find(k=>/^foto$/i.test(k))       || keys[20];
+  const cP =keys.find(k=>/produto/i.test(k))       || 'Produto';
+  const cM =keys.find(k=>/^marca$/i.test(k))       || 'Marca';
+  const cMo=keys.find(k=>/^modelo$/i.test(k))      || 'Modelo';
+  // debug: loga colunas detectadas no console
+  console.log('[Cadastro] colunas detectadas →',{cD,cFt,cP,cM,cMo});
+  console.log('[Cadastro] total linhas:',rows.length,'| sample prod:',rows[0]?.[cP]);
+  const map={};const prods=[];
+  rows.forEach(r=>{
+    const raw=r[cD];if(!raw)return;
+    const dt=raw instanceof Date?raw:new Date(raw);if(isNaN(dt))return;
+    const key=dt.toLocaleDateString('pt-BR');
+    if(!map[key])map[key]={d:key,sim:0,total:0,ts:dt.getTime()};
+    map[key].total++;
+    const foto=String(r[cFt]||'').trim().toUpperCase();
+    if(foto==='SIM')map[key].sim++;
+    prods.push({d:key,prod:String(r[cP]||'').trim(),foto,marca:String(r[cM]||'').trim(),modelo:String(r[cMo]||'').trim()});
+  });
+  const newDaily=Object.values(map).sort((a,b)=>a.ts-b.ts);
+  const now=ts();
+  // merge com dados existentes
+  const prevF=tryLS(LS_F);
+  const mergedDaily=mergeDaily(prevF?prevF.rows:[],newDaily);
+  const mergedProds=mergeProds(prevF?prevF.produtos||[]:[],prods);
+  const obj={rows:mergedDaily,produtos:mergedProds,updated:now};
+  setLS(LS_F,obj);pendPub.fotos=obj;fotosDaily=mergedDaily;fotosProds=mergedProds;
+  setHdr('Atualizado: '+now,'local');setP(100,'Concluído!');
+  const addedF=newDaily.length;const prevDaysF=prevF?prevF.rows.length:0;
+  const newDaysF=mergedDaily.length-prevDaysF;
+  setTimeout(()=>{closeUpload();clickDiaF=null;initF();showBtnPub();showToast('✓ Cadastro: +'+addedF+' dias mesclados (total '+mergedDaily.length+')',false,4000);},400);
+}
+
+function procVendas(rows){
+  const keys=Object.keys(rows[0]||{});
+  const cD  =keys.find(k=>/^data$/i.test(k))||'Data';
+  const cL  =keys.find(k=>/local.*venda/i.test(k))||'Local de Venda';
+  const cP  =keys.find(k=>/^produto$/i.test(k))||'Produto';
+  const cVl =keys.find(k=>/^valor de venda$/i.test(k))||'Valor de Venda';
+  const cDc =keys.find(k=>/^desconto$/i.test(k))||'Desconto';
+  const cT  =keys.find(k=>/valores.*totais/i.test(k))||'Valores Totais';
+  const cCod=keys.find(k=>/^código$/i.test(k))||'Código';
+  const n=s=>parseFloat(String(s||'0').replace(/\./g,'').replace(',','.'))||0;
+  const map={};const prods=[];
+  rows.forEach(r=>{
+    const local=String(r[cL]||'').trim();
+    if(!local||local==='nan'||local==='NaN') return;
+    const raw=r[cD];if(!raw)return;
+    let key,tsVal;
+    if(raw instanceof Date){
+      key=raw.toLocaleDateString('pt-BR'); tsVal=raw.getTime();
+    } else {
+      const s=String(raw).trim();
+      if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
+        key=s;
+        const[dd,mm,yy]=s.split('/');
+        tsVal=new Date(+yy,+mm-1,+dd,12,0,0).getTime();
+      } else {
+        const dt2=new Date(s); if(isNaN(dt2)) return;
+        key=dt2.toLocaleDateString('pt-BR'); tsVal=dt2.getTime();
+      }
+    }
+    if(!map[key]) map[key]={};
+    if(!map[key][local]) map[key][local]={d:key,canal:local,total:0,ts:tsVal};
+    const tot=n(r[cT]);
+    map[key][local].total=Math.round((map[key][local].total+tot)*100)/100;
+    const cod=String(r[cCod]||'').trim().replace(/\.0$/,'');
+    prods.push({d:key,canal:local,cod,prod:String(r[cP]||'').trim(),val:n(r[cVl]),desc:n(r[cDc]),tot,ts:tsVal});
+  });
+  // ordena produtos por data
+  const newDaily=Object.values(map).flatMap(m=>Object.values(m)).sort((a,b)=>a.ts-b.ts);
+  prods.sort((a,b)=>b.ts-a.ts);
+  const now=ts();
+  // merge com dados existentes
+  const prevV=tryLS(LS_V);
+  const mergedDaily=mergeDaily(
+    (prevV?prevV.rows:[]).map(r=>({...r,_key:r.d+'|'+r.canal})),
+    newDaily.map(r=>({...r,_key:r.d+'|'+r.canal}))
+  );
+  const mergedProds=mergeProds(prevV?prevV.produtos||[]:[],prods);
+  const obj={rows:mergedDaily,produtos:mergedProds,updated:now};
+  setLS(LS_V,obj);pendPub.vendas=obj;vendasDaily=mergedDaily;vendasProds=mergedProds;
+  setP(100,'Concluído!');
+  setTimeout(()=>{closeUpload();clickDiaV=null;clickCanalV=null;initV();showBtnPub();showToast('✓ Vendas: '+mergedProds.length+' itens no total',false,4000);},400);
+}
+
+const ts=()=>new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+function setP(pct2,label){document.getElementById('pw').style.display='block';document.getElementById('pbf').style.width=pct2+'%';document.getElementById('pbl').textContent=label;}
+
+/* ── PUBLISH ── */
+function openPublish(){document.getElementById('pubStatus').textContent='';document.getElementById('btnConfPub').disabled=false;document.getElementById('ovPub').classList.add('open');}
+function closePublish(){document.getElementById('ovPub').classList.remove('open');}
+
+async function publishGH(){
+  const tok=(tryLS(LS_T)||'').trim();
+  if(!tok){closePublish();showToast('⚠ Configure o token (⚙)',true);openToken();return;}
+  const btn=document.getElementById('btnConfPub');
+  const st=document.getElementById('pubStatus');
+  btn.disabled=true;
+
+  // monta lista de arquivos pendentes
+  const files=[];
+  if(pendPub.fotos)      files.push({file:'data.json',      data:pendPub.fotos});
+  if(pendPub.vendas)     files.push({file:'vendas.json',    data:pendPub.vendas});
+  if(pendPub.canceladas) files.push({file:'canceladas.json',data:pendPub.canceladas});
+  // se nada pendente, republica o que está no localStorage
+  if(!files.length){
+    const df=tryLS(LS_F); if(df) files.push({file:'data.json',data:df});
+    const dv=tryLS(LS_V); if(dv) files.push({file:'vendas.json',data:dv});
+    const dc=tryLS(LS_C); if(dc) files.push({file:'canceladas.json',data:dc});
+  }
+  if(!files.length){
+    st.style.color='var(--amber)';st.textContent='⚠ Nenhum dado carregado para publicar.';
+    btn.disabled=false;return;
+  }
+
+  const hdrs={'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+  let okCount=0;
+
+  for(const item of files){
+    st.style.color='var(--muted)';
+    st.textContent='⏳ ('+( files.indexOf(item)+1)+'/'+files.length+') Publicando '+item.file+'...';
+    try{
+      const api=`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${item.file}`;
+
+      // pega SHA atual (necessário para update)
+      let sha=null;
+      const gr=await fetch(api,{headers:hdrs});
+      if(gr.ok){ sha=(await gr.json()).sha; }
+      else if(gr.status!==404){
+        const e=await gr.json();
+        throw new Error('Erro ao ler '+item.file+': '+(e.message||gr.status));
+      }
+
+      // codifica JSON → base64 UTF-8 seguro (suporta acentos)
+      const jsonStr=JSON.stringify(item.data);
+      const encoded=new TextEncoder().encode(jsonStr);
+      let binary='';
+      // chunk para evitar stack overflow em arrays grandes
+      const CHUNK=8192;
+      for(let i=0;i<encoded.length;i+=CHUNK){
+        binary+=String.fromCharCode(...encoded.slice(i,i+CHUNK));
+      }
+      const b64=btoa(binary);
+
+      const body={
+        message:'dashboard: atualiza '+item.file+' — '+item.data.updated,
+        content:b64,
+        ...(sha?{sha}:{})
+      };
+
+      const pr=await fetch(api,{method:'PUT',headers:hdrs,body:JSON.stringify(body)});
+      if(!pr.ok){
+        const e=await pr.json();
+        throw new Error(e.message||'HTTP '+pr.status);
+      }
+      okCount++;
+    }catch(err){
+      st.style.color='var(--red)';
+      st.textContent='✗ Erro em '+item.file+': '+err.message;
+      btn.disabled=false;
+      return;
+    }
+  }
+
+  st.style.color='var(--green)';
+  st.textContent='✓ '+okCount+' arquivo(s) publicado(s) com sucesso!';
+  setHdr('Publicado: '+ts(),'gh');
+  pendPub={};
+  // mantém botão visível para permitir republicar a qualquer momento
+  setTimeout(()=>{closePublish();showToast('✓ GitHub atualizado!');},800);
+}
+
+/* ── TOKEN ── */
+
+
+function showBtnPub(){
+  document.getElementById('btnPub').style.display='inline-flex';
+}
+
+function clearData(type){
+  const labels={fotos:'dados de Cadastro',vendas:'dados de Vendas',canceladas:'dados de Canceladas',all:'TODOS os dados locais'};
+  if(!confirm('Apagar '+labels[type]+'? Isso não afeta o GitHub.')) return;
+  if(type==='fotos'||type==='all'){ delLS(LS_F); fotosDaily=[]; fotosProds=[]; }
+  if(type==='vendas'||type==='all'){ delLS(LS_V); vendasDaily=[]; vendasProds=[]; }
+  if(type==='canceladas'||type==='all'){ delLS(LS_C); cancelDaily=[]; cancelProds=[]; }
+  pendPub={};
+  showToast('✓ Dados locais limpos. Recarregue a página.');
+  closeToken();
+}
+
+function updTokUI(){const t=tryLS(LS_T);const s=document.getElementById('tokStatus');if(s)s.textContent=t?'✓ Token salvo':'Sem token configurado';}
+function saveTok(){const v=document.getElementById('tokInput').value.trim();if(!v){alert('Digite o token.');return;}setLS(LS_T,v);document.getElementById('tokInput').value='';showToast('✓ Token salvo');updTokUI();setTimeout(closeToken,600);}
+function clearTok(){if(!confirm('Apagar token?'))return;delLS(LS_T);updTokUI();showToast('Token removido',true);}
+function openToken(){updTokUI();document.getElementById('ovToken').classList.add('open');}
+function closeToken(){document.getElementById('ovToken').classList.remove('open');}
+
+/* ── TOAST ── */
+let tt;
+function showToast(msg,err=false,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.className=err?'err show':'show';clearTimeout(tt);tt=setTimeout(()=>t.className='',dur);}
+
+/* ── EVENTOS ── */
+document.getElementById('fi').addEventListener('change',e=>{if(e.target.files[0])procFile(e.target.files[0]);e.target.value='';});
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files[0])procFile(e.dataTransfer.files[0]);});
+dz.addEventListener('click',()=>document.getElementById('fi').click());
+
+// reset filtro dinâmico quando selects/search mudam
+document.getElementById('selMF').addEventListener('change',()=>{clickDiaF=null;renderF();});
+document.getElementById('selFotoF').addEventListener('change',renderF);
+document.getElementById('searchF').addEventListener('input',renderF);
+document.getElementById('selMV').addEventListener('change',()=>{clickDiaV=null;clickCanalV=null;renderV();});
+document.getElementById('selMC').addEventListener('change',()=>{clickDiaC=null;clickCanalC=null;renderC();});
+document.getElementById('selCanal').addEventListener('change',()=>{clickCanalV=null;renderV();});
+document.getElementById('selCanalC').addEventListener('change',()=>{clickCanalC=null;renderC();});
+document.getElementById('searchV').addEventListener('input',renderV);
+document.getElementById('searchC').addEventListener('input',renderC);
+
+['ovUpload','ovPub','ovToken'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{if(e.target.id===id)document.getElementById(id).classList.remove('open');});
+});
+
+
+/* ════════════════════════════════
+   ABA CANCELADAS
+════════════════════════════════ */
+function initC(){
+  document.getElementById('loadC').style.display='none';
+  document.getElementById('noDataC').style.display='none';
+  document.getElementById('dashC').style.display='block';
+  buildSel('selMC',[...new Set(cancelProds.map(r=>getMes(r.d)))]);
+  renderC();
+}
+
+function initCEmpty(){
+  document.getElementById('loadC').style.display='none';
+  document.getElementById('noDataC').style.display='block';
+}
+
+function renderC(){
+  const mes=document.getElementById('selMC').value;
+  const canal=document.getElementById('selCanalC').value;
+  const q=(document.getElementById('searchC').value||'').toLowerCase().trim();
+
+  let prods=cancelProds.filter(r=>{
+    if(mes!=='all'&&getMes(r.d)!==mes)return false;
+    if(canal!=='all'&&r.canal!==canal)return false;
+    if(q&&!r.prod.toLowerCase().includes(q))return false;
+    if(clickDiaC&&r.d!==clickDiaC)return false;
+    if(clickCanalC&&r.canal!==clickCanalC)return false;
+    return true;
+  });
+
+  const daily=cancelDaily.filter(r=>mes==='all'||getMes(r.d)===mes);
+
+  const totBal=prods.filter(r=>r.canal==='Balcão').reduce((a,r)=>a+r.tot,0);
+  const totML =prods.filter(r=>r.canal==='Mercado Livre').reduce((a,r)=>a+r.tot,0);
+  const totGeral=totBal+totML;
+  const dayMap={};daily.forEach(r=>{dayMap[r.d]=(dayMap[r.d]||0)+r.total;});
+  const worstD=Object.entries(dayMap).reduce((b,[d,v])=>v>b[1]?[d,v]:b,['—',0]);
+
+  renderKPI('kpiC',[
+    {l:'Total cancelado',  v:'R$ '+fmt(totGeral), s:'todos canais',                    c:'var(--red)'},
+    {l:'Balcão',           v:'R$ '+fmt(totBal),   s:pct(totBal,totGeral)+'% do total', c:'var(--red)'},
+    {l:'Mercado Livre',    v:'R$ '+fmt(totML),     s:pct(totML,totGeral)+'% do total', c:'var(--purple)'},
+    {l:'Maior cancelamento',v:'R$ '+fmt(worstD[1]),s:worstD[0],                        c:'var(--amber)'},
+    {l:'Itens cancelados', v:prods.length,         s:'no período',                     c:'var(--muted)'},
+  ]);
+
+  const dias=[...new Set(daily.map(r=>r.d))].sort((a,b)=>toTs(a)-toTs(b));
+  const dBal=dias.map(d=>daily.filter(r=>r.d===d&&r.canal==='Balcão').reduce((a,r)=>a+r.total,0));
+  const dML =dias.map(d=>daily.filter(r=>r.d===d&&r.canal==='Mercado Livre').reduce((a,r)=>a+r.total,0));
+
+  if(cCD){cCD.destroy();cCD=null;}
+  const canvasCD=document.getElementById('chartCD');
+  if(!canvasCD){return;}
+  cCD=new Chart(canvasCD,{
+    type:'bar',
+    data:{labels:dias,datasets:[
+      {label:'Balcão',       data:dBal,backgroundColor:dias.map(d=>clickDiaC&&d!==clickDiaC?'rgba(240,96,96,0.25)':'#f06060'),borderRadius:3,borderSkipped:false},
+      {label:'Mercado Livre',data:dML, backgroundColor:dias.map(d=>clickDiaC&&d!==clickDiaC?'rgba(167,139,250,0.25)':'#a78bfa'),borderRadius:3,borderSkipped:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e2023',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#f0f0ee',bodyColor:'#888',
+        callbacks:{label:ctx=>ctx.dataset.label+': R$ '+fmt(ctx.raw)}}},
+      scales:{
+        x:{stacked:true,ticks:{color:'#666',font:{size:10},maxRotation:60,autoSkip:true,maxTicksLimit:26},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{stacked:true,ticks:{color:'#666',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}
+      },
+      onClick:(evt)=>{
+        const pts=cCD.getElementsAtEventForMode(evt,'index',{intersect:false},true);
+        if(!pts.length)return;
+        const dia=dias[pts[0].index];
+        if(clickDiaC===dia){clickDiaC=null;}else{clickDiaC=dia;clickCanalC=null;}
+        updFilterBadgeC();renderC();
+      }
+    }
+  });
+
+  const balFull=daily.filter(r=>r.canal==='Balcão').reduce((a,r)=>a+r.total,0);
+  const mlFull =daily.filter(r=>r.canal==='Mercado Livre').reduce((a,r)=>a+r.total,0);
+  const totFull=balFull+mlFull;
+
+  if(cCC){cCC.destroy();cCC=null;}
+  const canvasCC=document.getElementById('chartCC');
+  if(!canvasCC){return;}
+  cCC=new Chart(canvasCC,{
+    type:'doughnut',
+    data:{labels:['Balcão','Mercado Livre'],datasets:[{
+      data:[balFull,mlFull],
+      backgroundColor:[
+        clickCanalC&&clickCanalC!=='Balcão'       ?'rgba(240,96,96,0.25)':'#f06060',
+        clickCanalC&&clickCanalC!=='Mercado Livre' ?'rgba(167,139,250,0.25)':'#a78bfa'
+      ],
+      borderWidth:0,hoverOffset:4
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{color:'#888',font:{size:12},padding:14}},
+        tooltip:{backgroundColor:'#1e2023',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#f0f0ee',bodyColor:'#888',
+          callbacks:{label:ctx=>' R$ '+fmt(ctx.raw)+' ('+pct(ctx.raw,totFull)+'%)'}}
+      },
+      onClick:(evt)=>{
+        const pts=cCC.getElementsAtEventForMode(evt,'nearest',{intersect:true},true);
+        if(!pts.length)return;
+        const label=cCC.data.labels[pts[0].index];
+        if(clickCanalC===label){clickCanalC=null;}else{clickCanalC=label;clickDiaC=null;document.getElementById('selCanalC').value='all';}
+        updFilterBadgeC();renderC();
+      }
+    }
+  });
+
+  updFilterBadgeC();
+  pC=1;
+  document.getElementById('tagC').textContent=prods.length+' itens';
+  renderPageC(prods);
+}
+
+function updFilterBadgeC(){
+  const el=document.getElementById('activeFilterC');
+  if(clickDiaC||clickCanalC){
+    el.style.display='inline-flex';el.className='active-filter';
+    const txt=clickDiaC?('📅 '+clickDiaC):(clickCanalC==='Balcão'?'🏪 Balcão':'🛒 Mercado Livre');
+    el.innerHTML=txt+' <span>×</span>';
+    el.onclick=()=>{clickDiaC=null;clickCanalC=null;updFilterBadgeC();renderC();};
+  } else { el.style.display='none'; }
+}
+
+function renderPageC(prods){
+  const slice=prods.slice((pC-1)*PER_PAGE,pC*PER_PAGE);
+  document.getElementById('tC').innerHTML=slice.map(r=>`
+    <tr>
+      <td class="num">${r.d}</td>
+      <td class="num" style="color:var(--muted)">${r.cod||'—'}</td>
+      <td class="prod-name" title="${esc(r.prod)}">${esc(r.prod)||'—'}</td>
+      <td><span class="badge ${r.canal==='Balcão'?'br':'bp'}">${r.canal==='Mercado Livre'?'ML':r.canal}</span></td>
+      <td class="num">R$ ${fmt(r.val)}</td>
+      <td class="num" style="color:${r.desc>0?'var(--amber)':'var(--muted)'}">R$ ${fmt(r.desc)}</td>
+      <td class="num" style="color:var(--red)">R$ ${fmt(r.tot)}</td>
+      <td style="font-size:12px;color:var(--muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.motivo)||'—'}</td>
+    </tr>`).join('');
+  renderPag('pagC',prods.length,pC,p=>{pC=p;renderPageC(prods);});
+}
+
+function procCanceladas(rows){
+  const keys=Object.keys(rows[0]||{});
+  const cD  =keys.find(k=>/^data$/i.test(k))||'Data';
+  const cL  =keys.find(k=>/local.*venda/i.test(k))||'Local de Venda';
+  const cP  =keys.find(k=>/^produto$/i.test(k))||'Produto';
+  const cVl =keys.find(k=>/^valor de venda$/i.test(k))||'Valor de Venda';
+  const cDc =keys.find(k=>/^desconto$/i.test(k))||'Desconto';
+  const cT  =keys.find(k=>/valores.*totais/i.test(k))||'Valores Totais';
+  const cCod=keys.find(k=>/^código$/i.test(k))||'Código';
+  const cMot=keys.find(k=>/motivo/i.test(k))||'Motivo do cancelamento';
+  const n=s=>parseFloat(String(s||'0').replace(/\./g,'').replace(',','.'))||0;
+  const map={};const prods=[];
+  rows.forEach(r=>{
+    const local=String(r[cL]||'').trim();
+    if(!local||local==='nan'||local==='NaN')return;
+    const raw=r[cD];if(!raw)return;
+    let key,tsVal;
+    if(raw instanceof Date){
+      key=raw.toLocaleDateString('pt-BR');tsVal=raw.getTime();
+    } else {
+      const s=String(raw).trim();
+      if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
+        key=s;const[dd,mm,yy]=s.split('/');tsVal=new Date(+yy,+mm-1,+dd,12,0,0).getTime();
+      } else {
+        const dt2=new Date(s);if(isNaN(dt2))return;
+        key=dt2.toLocaleDateString('pt-BR');tsVal=dt2.getTime();
+      }
+    }
+    if(!map[key])map[key]={};
+    if(!map[key][local])map[key][local]={d:key,canal:local,total:0,ts:tsVal};
+    const tot=n(r[cT]);
+    map[key][local].total=Math.round((map[key][local].total+tot)*100)/100;
+    const cod=String(r[cCod]||'').trim().replace(/\.0$/,'');
+    const motivo=String(r[cMot]||'').trim();
+    prods.push({d:key,canal:local,cod,prod:String(r[cP]||'').trim(),val:n(r[cVl]),desc:n(r[cDc]),tot,ts:tsVal,motivo});
+  });
+  const newDaily=Object.values(map).flatMap(m=>Object.values(m)).sort((a,b)=>a.ts-b.ts);
+  prods.sort((a,b)=>b.ts-a.ts);
+  const now=ts();
+  // merge com dados existentes
+  const prevC=tryLS(LS_C);
+  const mergedDaily=mergeDaily(
+    (prevC?prevC.rows:[]).map(r=>({...r,_key:r.d+'|'+r.canal})),
+    newDaily.map(r=>({...r,_key:r.d+'|'+r.canal}))
+  );
+  const mergedProds=mergeProds(prevC?prevC.produtos||[]:[],prods);
+  const obj={rows:mergedDaily,produtos:mergedProds,updated:now};
+  setLS(LS_C,obj);pendPub.canceladas=obj;cancelDaily=mergedDaily;cancelProds=mergedProds;
+  setP(100,'Concluído!');
+  setTimeout(()=>{closeUpload();initC();showBtnPub();showToast('✓ Canceladas: '+mergedProds.length+' itens no total',false,4000);},400);
+}
+
+boot();
+</script>
+</body>
+</html>
