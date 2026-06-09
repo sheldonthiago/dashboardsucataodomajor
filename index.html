@@ -1584,8 +1584,11 @@ function renderA(){
   const listagem=document.getElementById('selListagemA').value;
   const q=(document.getElementById('searchA').value||'').toLowerCase().trim();
 
+  // getMes seguro — retorna '' se data inválida
+  const getMesA=d=>{if(!d||!d.includes('/'))return '';const p=d.split('/');return p.length===3?p[1]+'/'+p[2]:'';}
+
   let prods=anunciosProds.filter(r=>{
-    if(mes!=='all'&&getMes(r.d)!==mes)return false;
+    if(mes!=='all'&&getMesA(r.d)!==mes)return false;
     if(status!=='all'&&r.status!==status)return false;
     if(listagem!=='all'&&r.listagem!==listagem)return false;
     if(q&&!r.titulo.toLowerCase().includes(q)&&!r.mlb.toLowerCase().includes(q)&&!String(r.cod).toLowerCase().includes(q))return false;
@@ -1594,24 +1597,25 @@ function renderA(){
     return true;
   });
 
-  // KPIs
-  const total=anunciosProds.length;
-  const ativos=anunciosProds.filter(r=>r.status==='Ativo').length;
-  const pausados=anunciosProds.filter(r=>r.status==='Pausado').length;
-  const revisao=anunciosProds.filter(r=>r.status==='Sob Revisão').length;
-  const premium=anunciosProds.filter(r=>r.listagem==='Premium').length;
+  // KPIs baseados nos dados FILTRADOS
+  const total=prods.length;
+  const ativos=prods.filter(r=>r.status==='Ativo').length;
+  const pausados=prods.filter(r=>r.status==='Pausado').length;
+  const revisao=prods.filter(r=>r.status==='Sob Revisão').length;
+  const premium=prods.filter(r=>r.listagem==='Premium').length;
+  const finalizados=prods.filter(r=>r.status==='Finalizado').length;
   renderKPI('kpiA',[
-    {l:'Total anúncios', v:total.toLocaleString('pt-BR'),   s:'na base',       c:'var(--blue)'},
-    {l:'Ativos',         v:ativos.toLocaleString('pt-BR'),  s:'publicados',    c:'var(--green)'},
-    {l:'Pausados',       v:pausados.toLocaleString('pt-BR'),s:'pausados',      c:'var(--amber)'},
-    {l:'Sob Revisão',    v:revisao.toLocaleString('pt-BR'), s:'em revisão',    c:'var(--red)'},
-    {l:'Premium',        v:premium.toLocaleString('pt-BR'), s:'listagem premium', c:'var(--purple)'},
+    {l:'Total',      v:total.toLocaleString('pt-BR'),      s:'no filtro',         c:'var(--blue)'},
+    {l:'Ativos',     v:ativos.toLocaleString('pt-BR'),     s:pct(ativos,total)+'% do total',    c:'var(--green)'},
+    {l:'Pausados',   v:pausados.toLocaleString('pt-BR'),   s:pct(pausados,total)+'% do total',  c:'var(--amber)'},
+    {l:'Sob Revisão',v:revisao.toLocaleString('pt-BR'),    s:pct(revisao,total)+'% do total',   c:'var(--red)'},
+    {l:'Premium',    v:premium.toLocaleString('pt-BR'),    s:pct(premium,total)+'% do total',   c:'var(--purple)'},
   ]);
 
   // gráfico por status (donut)
   const statusKeys=['Ativo','Pausado','Sob Revisão','Finalizado','Inativo'];
   const statusColors=['#22c48a','#f0a030','#f06060','#888986','#5b9cf6'];
-  const statusVals=statusKeys.map(s=>anunciosProds.filter(r=>r.status===s).length);
+  const statusVals=statusKeys.map(s=>prods.filter(r=>r.status===s).length);
 
   if(cAS){cAS.destroy();cAS=null;}
   const canvasAS=document.getElementById('chartAS');
@@ -1646,7 +1650,7 @@ function renderA(){
   // gráfico por listagem (donut)
   const listKeys=['Premium','Clássico'];
   const listColors=['#a78bfa','#5b9cf6'];
-  const listVals=listKeys.map(l=>anunciosProds.filter(r=>r.listagem===l).length);
+  const listVals=listKeys.map(l=>prods.filter(r=>r.listagem===l).length);
 
   if(cAL){cAL.destroy();cAL=null;}
   const canvasAL=document.getElementById('chartAL');
