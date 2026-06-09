@@ -119,19 +119,19 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
   <div class="hright">
     <span class="lupdate" id="lastUpdate">carregando...</span>
     <span class="sbadge sb-base" id="srcBadge"></span>
-    <button class="btn btn-outline" onclick="openUpload('fotos')">↑ Cadastro IBR</button>
-    <button class="btn btn-outline" onclick="openUpload('vendas')">↑ Vendas Realizadas</button>
-    <button class="btn btn-outline" onclick="openUpload('canceladas')">↑ Vendas Canceladas</button>
-    <button class="btn btn-outline" onclick="openUpload('anuncios')">↑ Anúncios ML</button>
+    <button class="btn btn-outline" onclick="openUpload('fotos')">↑ Fotos</button>
+    <button class="btn btn-outline" onclick="openUpload('vendas')">↑ Vendas</button>
+    <button class="btn btn-outline" onclick="openUpload('canceladas')">↑ Canceladas</button>
+    <button class="btn btn-outline" onclick="openUpload('anuncios')">↑ Anúncios</button>
     <button class="btn btn-blue" id="btnPub" style="display:none" onclick="openPublish()">☁ Publicar</button>
     <button class="btn btn-outline" onclick="openToken()">⚙</button>
   </div>
 </header>
 
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('fotos',this)">📋 Cadastro IBR</button>
+  <button class="tab active" onclick="switchTab('fotos',this)">📋 Cadastro</button>
   <button class="tab" onclick="switchTab('vendas',this)">✅ Vendas Realizadas</button>
-  <button class="tab" onclick="switchTab('canceladas',this)">❌ Vendas Canceladas</button>
+  <button class="tab" onclick="switchTab('canceladas',this)">❌ Canceladas</button>
   <button class="tab" onclick="switchTab('anuncios',this)">🛒 Anúncios ML</button>
 </div>
 
@@ -319,6 +319,37 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
     </div>
   </div>
 
+  <!-- ABA ANÚNCIOS ML -->
+  <div class="page" id="page-anuncios">
+    <div class="loading" id="loadA">Carregando...</div>
+    <div id="dashA" style="display:none">
+      <div class="kpi-grid" id="kpiA"></div>
+      <div class="controls">
+        <label>Status:</label>
+        <select id="selStatusA"><option value="all">Todos</option><option value="Ativo">Ativo</option><option value="Pausado">Pausado</option><option value="Sob Revisão">Sob Revisão</option><option value="Finalizado">Finalizado</option><option value="Inativo">Inativo</option></select>
+        <label>Listagem:</label>
+        <select id="selListagemA"><option value="all">Todas</option><option value="Premium">Premium</option><option value="Clássico">Clássico</option></select>
+        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchA" placeholder="Buscar título, código, MLB..."></div>
+        <span id="activeFilterA" style="display:none"></span>
+        <span class="tag" id="tagA"></span>
+      </div>
+      <div class="two-col">
+        <div class="card"><div class="card-hdr"><span class="card-title">Por status</span></div><div style="position:relative;width:100%;height:240px"><canvas id="chartAS"></canvas></div><div class="chart-hint">Clique para filtrar por status</div></div>
+        <div class="card"><div class="card-hdr"><span class="card-title">Por listagem</span></div><div style="position:relative;width:100%;height:240px"><canvas id="chartAL"></canvas></div><div class="chart-hint">Clique para filtrar por listagem</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Anúncios publicados</span><div class="export-group"><button class="btn-export btn-xls" onclick="exportXLS('anuncios')">⬇ Excel</button><button class="btn-export btn-pdf" onclick="exportPDF('anuncios')">⬇ PDF</button></div></div>
+        <div class="tw"><table><thead><tr><th>Código</th><th>SKU</th><th>Código MLB</th><th>Título</th><th>Status</th><th>Listagem</th><th>Envio</th><th>Frete</th><th>Anunciante</th></tr></thead><tbody id="tA"></tbody></table></div>
+        <div class="pagination" id="pagA"></div>
+      </div>
+    </div>
+    <div id="noDataA" style="display:none;text-align:center;padding:4rem 2rem">
+      <div style="font-size:48px;margin-bottom:1rem">🛒</div>
+      <div style="font-size:15px;font-weight:500;margin-bottom:8px">Nenhum anúncio carregado</div>
+      <div style="font-size:13px;color:var(--muted)">Clique em <strong>↑ Anúncios</strong> para importar a planilha do ML</div>
+    </div>
+  </div>
+
 
 <footer>Sucatão do Major · sheldonthiago/dashboarcadastroibr</footer>
 
@@ -374,6 +405,12 @@ async function boot(){
     // remove o parâmetro da URL sem recarregar
     window.history.replaceState({},'',window.location.pathname);
   }
+  // ajusta label do botão publicar conforme ambiente
+  if(IS_LOCAL){
+    document.getElementById('btnPub').textContent='💾 Salvar no servidor';
+    document.getElementById('btnPub').style.background='var(--green)';
+    document.getElementById('btnPub').style.color='#0a1a12';
+  }
   updTokUI();
   const tok=(tryLS(LS_T)||'').trim();
   const hdrs={'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Cache-Control':'no-cache'};
@@ -392,15 +429,28 @@ async function boot(){
   else await ghLoad('canceladas.json',hdrs,d=>{cancelDaily=d.rows;cancelProds=d.produtos||[];initC();showBtnPub();},()=>{initCEmpty();});
 }
 
+
+// Detecta se está rodando no servidor local
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
 async function ghLoad(file,hdrs,ok,fail){
+  // Servidor local — busca direto da API
+  if(IS_LOCAL){
+    try{
+      const r=await fetch('/api/'+file+'?_='+Date.now());
+      if(!r.ok)throw 0;
+      ok(await r.json());
+    }catch{fail();}
+    return;
+  }
+  // GitHub Pages — busca via API do GitHub
   const api=`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${file}`;
   try{
     const r=await fetch(api,{headers:hdrs});if(!r.ok)throw 0;
     const i=await r.json();
-    // decodifica base64 UTF-8 seguro
-      const b64=i.content.replace(/\n/g,'');
-      const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
-      ok(JSON.parse(new TextDecoder().decode(bytes)));
+    const b64=i.content.replace(/\n/g,'');
+    const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+    ok(JSON.parse(new TextDecoder().decode(bytes)));
   }catch{
     try{const r2=await fetch(file+'?_='+Date.now());if(!r2.ok)throw 0;ok(await r2.json());}
     catch{fail();}
@@ -872,6 +922,37 @@ function openPublish(){document.getElementById('pubStatus').textContent='';docum
 function closePublish(){document.getElementById('ovPub').classList.remove('open');}
 
 async function publishGH(){
+  // Se estiver no servidor local, salva direto via API
+  if(IS_LOCAL){
+    const files=[];
+    if(pendPub.fotos)      files.push({file:'data.json',      data:pendPub.fotos});
+    if(pendPub.vendas)     files.push({file:'vendas.json',    data:pendPub.vendas});
+    if(pendPub.canceladas) files.push({file:'canceladas.json',data:pendPub.canceladas});
+    if(pendPub.anuncios)   files.push({file:'anuncios.json',  data:pendPub.anuncios});
+    if(!files.length){
+      const df=tryLS(LS_F);if(df)files.push({file:'data.json',data:df});
+      const dv=tryLS(LS_V);if(dv)files.push({file:'vendas.json',data:dv});
+      const dc=tryLS(LS_C);if(dc)files.push({file:'canceladas.json',data:dc});
+      const da=tryLS(LS_A);if(da)files.push({file:'anuncios.json',data:da});
+    }
+    const st=document.getElementById('pubStatus');
+    const btn=document.getElementById('btnConfPub');
+    btn.disabled=true;
+    let ok=0;
+    for(const item of files){
+      st.style.color='var(--muted)';st.textContent='⏳ Salvando '+item.file+'...';
+      try{
+        const r=await fetch('/api/'+item.file,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(item.data)});
+        if(!r.ok)throw new Error(await r.text());
+        ok++;
+      }catch(err){st.style.color='var(--red)';st.textContent='✗ Erro: '+err.message;btn.disabled=false;return;}
+    }
+    st.style.color='var(--green)';st.textContent='✓ '+ok+' arquivo(s) salvos no servidor!';
+    setHdr('Salvo: '+ts(),'gh');pendPub={};document.getElementById('btnPub').style.display='none';
+    setTimeout(()=>{closePublish();showToast('✓ Dados salvos no servidor!');},700);
+    return;
+  }
+  // GitHub Pages — fluxo original
   const tok=(tryLS(LS_T)||'').trim();
   if(!tok){closePublish();showToast('⚠ Configure o token (⚙)',true);openToken();return;}
   const btn=document.getElementById('btnConfPub');
