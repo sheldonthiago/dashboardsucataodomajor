@@ -579,8 +579,8 @@ async function boot(){
   else await ghLoad('vendas.json',hdrs,d=>{vendasDaily=d.rows;vendasProds=d.produtos||[];initV();showBtnPub();},()=>{document.getElementById('loadV').textContent='Nenhum dado. Faça upload do .xlsx.';});
 
   const sc=tryLS(LS_C);
-  if(sc){cancelDaily=sc.rows;cancelProds=sc.produtos||[];initC();showBtnPub();}
-  else await ghLoad('canceladas.json',hdrs,d=>{cancelDaily=d.rows;cancelProds=d.produtos||[];initC();showBtnPub();},()=>{initCEmpty();});
+  if(sc){cancelDaily=sc.rows;cancelProds=sc.produtos||[];initC();showBtnPub();renderTaxaCancelamento('V');}
+  else await ghLoad('canceladas.json',hdrs,d=>{cancelDaily=d.rows;cancelProds=d.produtos||[];initC();showBtnPub();renderTaxaCancelamento('V');},()=>{initCEmpty();});
 
   // anúncios: sempre do servidor, nunca localStorage (arquivo 1MB+)
   await ghLoad('anuncios.json',hdrs,d=>{anunciosProds=d.produtos||[];initA();},()=>{initAEmpty();});
@@ -869,7 +869,8 @@ function renderV(){
   pV=1;
   document.getElementById('tagV').textContent=prods.length+' itens';
   renderPageV(prods);
-
+  // atualiza taxa de cancelamento com o mesmo filtro
+  renderTaxaCancelamento('V');
 }
 
 function updFilterBadgeV(){
@@ -1474,7 +1475,7 @@ function procCanceladas(rows){
   const obj={rows:mergedDaily,produtos:mergedProds,updated:now};
   setLS(LS_C,obj);pendPub.canceladas=obj;cancelDaily=mergedDaily;cancelProds=mergedProds;
   setP(100,'Concluído!');
-  setTimeout(()=>{closeUpload();initC();showBtnPub();showToast('✓ Canceladas: '+mergedProds.length+' itens no total',false,4000);},400);
+  setTimeout(()=>{closeUpload();initC();showBtnPub();renderTaxaCancelamento('V');showToast('✓ Canceladas: '+mergedProds.length+' itens no total',false,4000);},400);
 }
 
 
