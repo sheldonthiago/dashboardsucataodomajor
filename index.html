@@ -314,6 +314,7 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
   <button class="tab" onclick="switchTab('anuncios',this)">🛒 Anúncios ML</button>
   <button class="tab" onclick="switchTab('abc',this)">📊 Curva ABC</button>
   <button class="tab" onclick="switchTab('ranking',this)">🏍️ Ranking Marcas</button>
+  <button class="tab" onclick="switchTab('comparativo',this)">📈 Comparativo</button>
 </div>
 
 <!-- MOBILE: menu suspenso -->
@@ -331,6 +332,7 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
     <button class="nav-item" onclick="switchTabMenu('anuncios',this,'🛒 Anúncios ML')">🛒 Anúncios ML</button>
     <button class="nav-item" onclick="switchTabMenu('abc',this,'📊 Curva ABC')">📊 Curva ABC</button>
     <button class="nav-item" onclick="switchTabMenu('ranking',this,'🏍️ Ranking Marcas')">🏍️ Ranking Marcas</button>
+    <button class="nav-item" onclick="switchTabMenu('comparativo',this,'📈 Comparativo')">📈 Comparativo</button>
   </div>
 </div>
 
@@ -705,6 +707,40 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
     </div>
   </div>
 
+  <!-- ABA COMPARATIVO MÊS A MÊS -->
+  <div class="page" id="page-comparativo">
+    <div style="padding-top:1.5rem">
+      <div class="controls">
+        <label>Canal:</label>
+        <select id="selCanalComp">
+          <option value="all">Todos</option>
+          <option value="Balcão">Balcão</option>
+          <option value="Mercado Livre">Mercado Livre</option>
+        </select>
+        <span class="tag" id="tagComp"></span>
+      </div>
+      <div class="kpi-grid" id="kpiComp"></div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Faturamento mensal — Realizado vs Cancelado</span></div>
+        <div style="position:relative;width:100%;height:300px"><canvas id="chartComp"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Crescimento mês a mês (%)</span></div>
+        <div style="position:relative;width:100%;height:220px"><canvas id="chartGrowth"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Detalhamento mensal</span></div>
+        <div class="tw">
+          <table><thead><tr>
+            <th>Mês</th><th>Realizado</th><th>Cancelado</th><th>Líquido</th>
+            <th>Qtd Vendas</th><th>Ticket Médio</th><th>Cresc. Fat.</th><th>Cresc. Qtd</th>
+          </tr></thead>
+          <tbody id="tComp"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
 
 <footer>Sucatão do Major · sheldonthiago/dashboarcadastroibr</footer>
 
@@ -902,6 +938,7 @@ function switchTab(n,el){
   }
   if(n==='abc') renderABC();
   if(n==='ranking') renderRanking();
+  if(n==='comparativo') renderComparativo();
 }
 
 /* ════════════════════════════════
@@ -1536,6 +1573,7 @@ document.getElementById('selMesDesconto').addEventListener('change', renderDesco
 document.getElementById('selMesRank').addEventListener('change', renderRanking);
 document.getElementById('selCanalRank').addEventListener('change', renderRanking);
 document.getElementById('selCriterioRank').addEventListener('change', renderRanking);
+document.getElementById('selCanalComp').addEventListener('change', renderComparativo);
 document.getElementById('selCanalDesconto').addEventListener('change', renderDescontoTab);
 document.getElementById('selMesA').addEventListener('change',()=>{clickStatusA=null;clickListagemA=null;renderA();});
 document.getElementById('selStatusA').addEventListener('change',()=>{clickStatusA=null;renderA();});
@@ -1808,6 +1846,7 @@ function getHeaders(type){
   if(type==='anuncios') return ['Data','Código','SKU','Código MLB','Título','Status','Listagem','Envio','Frete Grátis','Anunciante'];
   if(type==='abc')      return ['#','Produto','Código','Canal','Qtd','Faturamento (R$)','% Fat.','% Acum.','Classe'];
   if(type==='ranking')  return ['#','Marca','Modelos','Qtd Vendas','Faturamento (R$)','Ticket Médio (R$)','% Fat.'];
+  if(type==='comparativo') return ['Mês','Realizado (R$)','Cancelado (R$)','Líquido (R$)','Qtd Vendas','Ticket Médio (R$)','Cresc. Fat. (%)','Cresc. Qtd (%)'];
   if(type==='fotos')    return ['Data','Produto','Marca','Modelo','Foto'];
   if(type==='vendas')   return ['Data','Código','Produto','Canal','Valor (R$)','Desconto (R$)','Total (R$)'];
   if(type==='canceladas') return ['Data','Código','Produto','Canal','Valor (R$)','Desconto (R$)','Total (R$)','Motivo'];
@@ -1817,6 +1856,7 @@ function rowToArray(type, r){
   if(type==='anuncios') return [r.d,r.cod,r.sku,r.mlb,r.titulo,r.status,r.listagem,r.envio,r.frete,r.anunciante];
   if(type==='abc')      return [r.rank,r.prod,r.cod||'',r.canal||'',r.qtd,'R$ '+fmt(r.fat),r.pctFat.toFixed(2)+'%',r.acum.toFixed(2)+'%',r.classe];
   if(type==='ranking')  return [r.rank,r.marca,r.modelos,r.qtd,'R$ '+fmt(r.fat),'R$ '+fmt(r.ticket),r.pctFat.toFixed(1)+'%'];
+  if(type==='comparativo') return [r.mesLabel,'R$ '+fmt(r.fat),'R$ '+fmt(r.canc),'R$ '+fmt(r.liq),r.qtd,'R$ '+fmt(r.ticket),r.crescFat!==null?r.crescFat.toFixed(1)+'%':'—',r.crescQtd!==null?r.crescQtd.toFixed(1)+'%':'—'];
   if(type==='fotos')      return [r.d, r.prod, r.marca, r.modelo, r.foto];
   if(type==='vendas')     return [r.d, r.cod||'', r.prod, r.canal, r.val, r.desc, r.tot];
   if(type==='canceladas') return [r.d, r.cod||'', r.prod, r.canal, r.val, r.desc, r.tot, r.motivo||''];
@@ -1826,6 +1866,7 @@ function exportLabel(type){
   if(type==='anuncios') return 'Anuncios_ML';
   if(type==='abc')      return 'Curva_ABC';
   if(type==='ranking')  return 'Ranking_Marcas';
+  if(type==='comparativo') return 'Comparativo_Mensal';
   return {fotos:'Cadastro',vendas:'Vendas_Realizadas',canceladas:'Canceladas'}[type];
 }
 
@@ -2770,6 +2811,157 @@ function renderRanking(){
       <td class="num" style="color:var(--green)">R$ ${fmt(m.fat)}</td>
       <td class="num">R$ ${fmt(m.ticket)}</td>
       <td class="num"><span class="badge ${m.pctFat>=20?'bg':m.pctFat>=10?'ba':'bb'}">${m.pctFat.toFixed(1)}%</span></td>
+    </tr>`).join('');
+}
+
+
+/* ════════════════════════════════
+   ABA COMPARATIVO MÊS A MÊS
+════════════════════════════════ */
+let filteredComp = [];
+let cComp = null, cGrowth = null;
+
+function renderComparativo(){
+  if(!vendasProds.length){
+    document.getElementById('kpiComp').innerHTML=
+      '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">Carregue os dados de Vendas Realizadas.</div>';
+    return;
+  }
+
+  const canal = document.getElementById('selCanalComp').value;
+
+  const filtV = vendasProds.filter(r=>canal==='all'||r.canal===canal);
+  const filtC = cancelProds.filter(r=>canal==='all'||r.canal===canal);
+
+  // agrupa por mês
+  const getMesLabel = m=>{
+    const nm=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const[mm,yy]=m.split('/');return nm[parseInt(mm)]+'/'+(yy.slice(2));
+  };
+  const sortMes=(a,b)=>{const[ma,ya]=a.split('/');const[mb,yb]=b.split('/');return(+ya*100+ +ma)-(+yb*100+ +mb);};
+
+  const meses=[...new Set([...filtV,...filtC].map(r=>getMes(r.d)).filter(Boolean))].sort(sortMes);
+
+  const rows = meses.map(mes=>{
+    const v = filtV.filter(r=>getMes(r.d)===mes);
+    const c = filtC.filter(r=>getMes(r.d)===mes);
+    const fat  = v.reduce((s,r)=>s+r.tot,0);
+    const canc = c.reduce((s,r)=>s+r.tot,0);
+    const liq  = fat - canc;
+    const qtd  = v.length;
+    const ticket = qtd ? fat/qtd : 0;
+    return {mes, mesLabel:getMesLabel(mes), fat, canc, liq, qtd, ticket, crescFat:null, crescQtd:null};
+  });
+
+  // calcula crescimento
+  rows.forEach((r,i)=>{
+    if(i>0){
+      const prev = rows[i-1];
+      r.crescFat = prev.fat ? (r.fat - prev.fat)/prev.fat*100 : null;
+      r.crescQtd = prev.qtd ? (r.qtd - prev.qtd)/prev.qtd*100 : null;
+    }
+  });
+
+  filteredComp = rows;
+  document.getElementById('tagComp').textContent = meses.length+' meses';
+
+  // ── KPIs (mês atual vs anterior) ──
+  const cur  = rows[rows.length-1];
+  const prev = rows[rows.length-2];
+  const totFat = rows.reduce((s,r)=>s+r.fat,0);
+  const melhor = rows.reduce((b,r)=>r.fat>b.fat?r:b, rows[0]||{fat:0,mesLabel:'—'});
+
+  const kpiDelta = (val, prevVal, prefix='R$ ')=>{
+    if(!prev||!prevVal) return '';
+    const d = val-prevVal;
+    const pct = prevVal?(d/prevVal*100).toFixed(1):0;
+    const cor = d>=0?'var(--green)':'var(--red)';
+    return `<span style="font-size:11px;color:${cor};margin-left:4px">${d>=0?'▲':'▼'} ${Math.abs(pct)}%</span>`;
+  };
+
+  renderKPI('kpiComp',[
+    {l:'Mês atual',    v:'R$ '+fmt(cur?.fat||0),    s:(cur?.mesLabel||'—')+kpiDelta(cur?.fat,prev?.fat),    c:'var(--green)'},
+    {l:'Mês anterior', v:'R$ '+fmt(prev?.fat||0),   s:(prev?.mesLabel||'—'),                                c:'var(--muted)'},
+    {l:'Crescimento',  v:(cur?.crescFat!=null?(cur.crescFat>=0?'+':'')+cur.crescFat.toFixed(1)+'%':'—'),    s:'fat. mês a mês',c: cur?.crescFat>=0?'var(--green)':'var(--red)'},
+    {l:'Total acum.',  v:'R$ '+fmt(totFat),           s:rows.reduce((s,r)=>s+r.qtd,0)+' vendas',            c:'var(--blue)'},
+    {l:'Melhor mês',   v:'R$ '+fmt(melhor.fat),       s:melhor.mesLabel,                                    c:'var(--amber)'},
+  ]);
+
+  // ── Gráfico barras agrupadas ──
+  if(cComp){cComp.destroy();cComp=null;}
+  const cvComp=document.getElementById('chartComp');
+  if(cvComp){
+    cComp=new Chart(cvComp,{
+      type:'bar',
+      data:{
+        labels:rows.map(r=>r.mesLabel),
+        datasets:[
+          {label:'Realizado', data:rows.map(r=>r.fat),  backgroundColor:'#22c48a', borderRadius:4, borderSkipped:false},
+          {label:'Cancelado', data:rows.map(r=>r.canc), backgroundColor:'#f06060', borderRadius:4, borderSkipped:false},
+          {label:'Líquido',   data:rows.map(r=>r.liq),  backgroundColor:'#5b9cf6', borderRadius:4, borderSkipped:false, hidden:true},
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'top',labels:{color:'#888',font:{size:11},padding:12}},
+          tooltip:{backgroundColor:'#1e2023',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#f0f0ee',bodyColor:'#888',
+            callbacks:{label:ctx=>ctx.dataset.label+': R$ '+fmt(ctx.raw)}}
+        },
+        scales:{
+          x:{ticks:{color:'#666',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+          y:{ticks:{color:'#666',font:{size:10},callback:v=>'R$ '+fmt(v)},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}
+        }
+      }
+    });
+  }
+
+  // ── Gráfico crescimento linha ──
+  if(cGrowth){cGrowth.destroy();cGrowth=null;}
+  const cvGrowth=document.getElementById('chartGrowth');
+  const rowsComCresc=rows.filter(r=>r.crescFat!==null);
+  if(cvGrowth&&rowsComCresc.length){
+    cGrowth=new Chart(cvGrowth,{
+      type:'bar',
+      data:{
+        labels:rowsComCresc.map(r=>r.mesLabel),
+        datasets:[{
+          label:'Crescimento (%)',
+          data:rowsComCresc.map(r=>Math.round(r.crescFat*10)/10),
+          backgroundColor:rowsComCresc.map(r=>r.crescFat>=0?'rgba(34,196,138,0.7)':'rgba(240,96,96,0.7)'),
+          borderRadius:4,borderSkipped:false
+        }]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{backgroundColor:'#1e2023',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#f0f0ee',bodyColor:'#888',
+            callbacks:{label:ctx=>(ctx.raw>=0?'+':'')+ctx.raw+'%'}}
+        },
+        scales:{
+          x:{ticks:{color:'#666',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+          y:{ticks:{color:'#666',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.04)'},
+            afterBuildTicks:axis=>{if(!axis.ticks.some(t=>t.value===0))axis.ticks.push({value:0});}}
+        }
+      }
+    });
+  } else if(cvGrowth){
+    cvGrowth.parentElement.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:13px">Precisa de pelo menos 2 meses de dados para calcular crescimento.</div>';
+  }
+
+  // ── Tabela ──
+  const corCresc=v=>v===null?'var(--muted)':v>=0?'var(--green)':'var(--red)';
+  const fmtCresc=v=>v===null?'—':(v>=0?'+':'')+v.toFixed(1)+'%';
+
+  document.getElementById('tComp').innerHTML=[...rows].reverse().map(r=>`
+    <tr>
+      <td style="font-weight:500">${r.mesLabel}</td>
+      <td class="num" style="color:var(--green)">R$ ${fmt(r.fat)}</td>
+      <td class="num" style="color:var(--red)">R$ ${fmt(r.canc)}</td>
+      <td class="num" style="color:var(--blue)">R$ ${fmt(r.liq)}</td>
+      <td class="num">${r.qtd}</td>
+      <td class="num">R$ ${fmt(r.ticket)}</td>
+      <td class="num" style="color:${corCresc(r.crescFat)}">${fmtCresc(r.crescFat)}</td>
+      <td class="num" style="color:${corCresc(r.crescQtd)}">${fmtCresc(r.crescQtd)}</td>
     </tr>`).join('');
 }
 
