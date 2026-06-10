@@ -243,6 +243,15 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
     <div id="dashV" style="display:none">
       <div class="kpi-grid" id="kpiV"></div>
 
+      <!-- Desconto médio por canal -->
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-hdr">
+          <span class="card-title">Desconto médio por canal</span>
+          <span style="font-size:12px;color:var(--muted)">R$ e % por venda</span>
+        </div>
+        <div id="descontoConteudo"></div>
+      </div>
+
       <div class="controls">
         <label>Mês:</label><select id="selMV"></select>
         <label>Canal:</label>
@@ -575,8 +584,8 @@ async function boot(){
   else await ghLoad('data.json',hdrs,d=>{fotosDaily=d.rows;fotosProds=d.produtos||[];setHdr('Atualizado: '+d.updated,'base');initF();showBtnPub();},()=>{document.getElementById('loadF').textContent='Nenhum dado. Faça upload do .xlsx.';});
 
   const sv=tryLS(LS_V);
-  if(sv){vendasDaily=sv.rows;vendasProds=sv.produtos||[];initV();showBtnPub();}
-  else await ghLoad('vendas.json',hdrs,d=>{vendasDaily=d.rows;vendasProds=d.produtos||[];initV();showBtnPub();},()=>{document.getElementById('loadV').textContent='Nenhum dado. Faça upload do .xlsx.';});
+  if(sv){vendasDaily=sv.rows;vendasProds=sv.produtos||[];initV();showBtnPub();renderDesconto();}
+  else await ghLoad('vendas.json',hdrs,d=>{vendasDaily=d.rows;vendasProds=d.produtos||[];initV();showBtnPub();renderDesconto();},()=>{document.getElementById('loadV').textContent='Nenhum dado. Faça upload do .xlsx.';});
 
   const sc=tryLS(LS_C);
   if(sc){cancelDaily=sc.rows;cancelProds=sc.produtos||[];initC();showBtnPub();renderTaxaCancelamento('V');}
@@ -869,6 +878,7 @@ function renderV(){
   pV=1;
   document.getElementById('tagV').textContent=prods.length+' itens';
   renderPageV(prods);
+  renderDesconto();
   // atualiza taxa de cancelamento com o mesmo filtro
   renderTaxaCancelamento('V');
 }
@@ -2235,6 +2245,112 @@ function renderTaxaCancelamento(origem){
             <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.qtdC} de ${c.qtdV+c.qtdC} transações</div>
           </div>`).join('')}
       </div>
+    </div>
+  `;
+}
+
+
+/* ════════════════════════════════
+   DESCONTO MÉDIO POR CANAL
+════════════════════════════════ */
+function renderDesconto(){
+  const el = document.getElementById('descontoConteudo');
+  if(!el) return;
+  if(!vendasProds.length){
+    el.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0">Carregue os dados de Vendas Realizadas.</div>';
+    return;
+  }
+
+  const mes = document.getElementById('selMV').value;
+
+  // filtra por mês
+  const prods = mes==='all' ? vendasProds : vendasProds.filter(r=>getMes(r.d)===mes);
+
+  // agrupa por canal e mês
+  const canais = ['Balcão','Mercado Livre'];
+  const getMesLabel = m => {
+    const nm=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const[mm,yy]=m.split('/'); return nm[parseInt(mm)]+' '+yy;
+  };
+
+  // stats gerais por canal
+  const stats = canais.map(canal=>{
+    const items = prods.filter(r=>r.canal===canal);
+    const comDesc = items.filter(r=>r.desc>0);
+    const totalDesc = items.reduce((s,r)=>s+r.desc,0);
+    const totalVal  = items.reduce((s,r)=>s+(r.val||0),0);
+    const mediaDescR = items.length ? totalDesc/items.length : 0;
+    const mediaDescPct = totalVal ? totalDesc/totalVal*100 : 0;
+    const txComDesc = items.length ? comDesc.length/items.length*100 : 0;
+    return {canal, items:items.length, comDesc:comDesc.length, totalDesc, mediaDescR, mediaDescPct, txComDesc};
+  });
+
+  // por mês para o gráfico
+  const meses = [...new Set(vendasProds.map(r=>getMes(r.d)).filter(Boolean))].sort((a,b)=>{
+    const[ma,ya]=a.split('/');const[mb,yb]=b.split('/');
+    return (+ya*100+ +ma)-(+yb*100+ +mb);
+  });
+
+  const corCanal = c => c==='Balcão'?'var(--green)':'var(--blue)';
+  const corDesc  = pct => pct < 5 ? 'var(--green)' : pct < 15 ? 'var(--amber)' : 'var(--red)';
+
+  el.innerHTML = `
+    <!-- KPIs por canal -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:1.25rem">
+      ${stats.map(s=>`
+        <div style="background:var(--surface2);border-radius:var(--r);padding:1rem;border-left:3px solid ${corCanal(s.canal)}">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">${s.canal}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Desc. médio (R$)</div>
+              <div style="font-size:18px;font-weight:600;font-family:'DM Mono',monospace;color:${corDesc(s.mediaDescPct)}">R$ ${fmt(s.mediaDescR)}</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Desc. médio (%)</div>
+              <div style="font-size:18px;font-weight:600;font-family:'DM Mono',monospace;color:${corDesc(s.mediaDescPct)}">${s.mediaDescPct.toFixed(1)}%</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Total descontado</div>
+              <div style="font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:var(--amber)">R$ ${fmt(s.totalDesc)}</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Vendas c/ desconto</div>
+              <div style="font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:var(--muted)">${s.comDesc} / ${s.items} (${s.txComDesc.toFixed(0)}%)</div>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <!-- Evolução mensal do desconto médio % -->
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.6px">Evolução mensal — desconto médio (%)</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${meses.map(m=>{
+        const bal = vendasProds.filter(r=>getMes(r.d)===m&&r.canal==='Balcão');
+        const ml  = vendasProds.filter(r=>getMes(r.d)===m&&r.canal==='Mercado Livre');
+        const pctBal = bal.length ? bal.reduce((s,r)=>s+r.desc,0)/bal.reduce((s,r)=>s+(r.val||0),0)*100 : 0;
+        const pctML  = ml.length  ? ml.reduce((s,r)=>s+r.desc,0)/ml.reduce((s,r)=>s+(r.val||0),0)*100  : 0;
+        const maxPct = 30; // escala máxima visual
+        return `
+          <div style="display:grid;grid-template-columns:70px 1fr 1fr;gap:8px;align-items:center">
+            <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace">${getMesLabel(m)}</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="background:var(--surface2);border-radius:3px;height:16px;flex:1;overflow:hidden">
+                <div style="height:100%;width:${Math.min(pctBal/maxPct*100,100)}%;background:var(--green);border-radius:3px;transition:width .3s"></div>
+              </div>
+              <span style="font-size:11px;color:var(--green);font-family:'DM Mono',monospace;min-width:36px">${pctBal.toFixed(1)}%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="background:var(--surface2);border-radius:3px;height:16px;flex:1;overflow:hidden">
+                <div style="height:100%;width:${Math.min(pctML/maxPct*100,100)}%;background:var(--blue);border-radius:3px;transition:width .3s"></div>
+              </div>
+              <span style="font-size:11px;color:var(--blue);font-family:'DM Mono',monospace;min-width:36px">${pctML.toFixed(1)}%</span>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--muted)">
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--green);border-radius:2px;margin-right:4px"></span>Balcão</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--blue);border-radius:2px;margin-right:4px"></span>Mercado Livre</span>
     </div>
   `;
 }
