@@ -198,7 +198,7 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
   /* esconde botões de upload no header — usa só o ⚙ e Publicar */
   #btnPub{order:1}
   button[onclick="openToken()"]{order:2}
-  button[onclick*="openUpload"]{display:none}
+  .hright button[onclick*="openUpload"]{display:none}
   .hright .btn-outline:not(#btnPub):not([onclick="openToken()"]){display:none}
   #btnMobileMenu{display:inline-flex !important}
 
