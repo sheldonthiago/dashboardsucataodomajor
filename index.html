@@ -1,3 +1,4 @@
+<!-- v20260610-FINAL -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -84,7 +85,7 @@ select:focus{border-color:var(--green)}
 .page .two-col .card{margin-bottom:0}
 .page .kpi-grid{margin-bottom:1.5rem}
 .page .controls{margin-bottom:1.25rem}
-@media(max-width:700px){.two-col{grid-template-columns:1fr}}
+
 .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
 .legend span{display:flex;align-items:center;gap:5px}
 .ldot{width:8px;height:8px;border-radius:2px}
@@ -118,7 +119,114 @@ tr:hover td{background:var(--surface2)}
 .export-group{display:flex;gap:6px;align-items:center}
 .loading{text-align:center;padding:4rem 2rem;color:var(--muted);font-size:14px}
 footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:1rem}
-@media(max-width:600px){header{padding:1rem}#main{padding:1rem}.tabs{padding:0 1rem}}
+
+  .hright .btn-outline:not(#btnPub):not([onclick="openToken()"]){display:none}
+}
+
+/* ══════════════════════════════════
+   RESPONSIVO — MOBILE FIRST
+══════════════════════════════════ */
+
+/* header mobile */
+@media(max-width:768px){
+  header{
+    padding:.6rem .75rem;
+    flex-wrap:wrap;
+    gap:.4rem;
+  }
+  .logo{font-size:13px;gap:6px}
+  .logo-dot{width:6px;height:6px}
+  .hright{gap:5px;width:100%}
+  .lupdate{font-size:11px;flex:1}
+  .sbadge{font-size:10px;padding:2px 6px}
+  .btn{padding:5px 9px;font-size:11px;gap:3px}
+  /* esconde botões de upload no header — usa só o ⚙ e Publicar */
+  #btnPub{order:1}
+  button[onclick="openToken()"]{order:2}
+  button[onclick*="openUpload"]{display:none}
+  #btnMobileMenu{display:inline-flex !important}
+
+  /* tabs scroll horizontal */
+  .tabs{
+    padding:0 .5rem;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    flex-wrap:nowrap;
+    border-bottom:1px solid var(--border);
+  }
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{
+    padding:8px 10px;
+    font-size:11px;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+
+  /* main */
+  #main{padding:.75rem}
+
+  /* KPIs 2 colunas */
+  .kpi-grid{
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+    margin-bottom:1rem;
+  }
+  .kpi{padding:.75rem .85rem}
+  .kpi-val{font-size:18px;letter-spacing:-.5px}
+  .kpi-label{font-size:10px}
+  .kpi-sub{font-size:11px}
+
+  /* controles empilhados */
+  .controls{
+    flex-direction:column;
+    align-items:stretch;
+    gap:6px;
+    margin-bottom:1rem;
+  }
+  .controls label{display:none}
+  .controls select{width:100%}
+  .search-wrap{max-width:100%;width:100%}
+  .active-filter{align-self:flex-start}
+  .tag{align-self:flex-start}
+
+  /* cards */
+  .card{padding:1rem .85rem;margin-bottom:1rem}
+  .card-hdr{flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:1rem}
+  .export-group{display:flex;gap:6px}
+
+  /* dois cards lado a lado vira coluna */
+  .two-col{grid-template-columns:1fr;gap:1rem;margin-bottom:1rem}
+
+  /* tabelas scroll */
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{font-size:11px;min-width:500px}
+  th,td{padding:6px 8px;white-space:nowrap}
+  .prod-name{max-width:140px}
+
+  /* paginação centralizada */
+  .pagination{justify-content:center;gap:4px;flex-wrap:wrap}
+  .pagination button{padding:4px 8px;font-size:11px}
+  .pinfo{font-size:11px}
+
+  /* modal */
+  .modal{padding:1.25rem 1rem;max-width:95vw}
+
+  /* taxa grid */
+  .taxa-grid{grid-template-columns:1fr;gap:8px}
+  .taxa-item{padding:.75rem}
+  .taxa-val{font-size:18px}
+
+  /* charts menores */
+  canvas{max-height:200px}
+}
+
+/* telas muito pequenas < 380px */
+@media(max-width:380px){
+  .kpi-grid{grid-template-columns:1fr}
+  .hright .sbadge{display:none}
+  .lupdate{display:none}
+}
 </style>
 </head>
 <body>
@@ -126,6 +234,22 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
 <header>
   <div class="logo"><span class="logo-dot"></span>Sucatão do Major</div>
   <div class="hright">
+    <!-- menu mobile para uploads -->
+    <div id="mobileMenu" style="display:none;position:fixed;inset:0;z-index:250;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px)" onclick="this.style.display='none'">
+      <div style="position:absolute;top:0;right:0;background:var(--surface);padding:1.5rem;min-width:220px;height:100%;box-shadow:-4px 0 20px rgba(0,0,0,.5)" onclick="event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+          <span style="font-size:14px;font-weight:600">Upload de dados</span>
+          <button onclick="document.getElementById('mobileMenu').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">×</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn-outline" onclick="openUpload('fotos');document.getElementById('mobileMenu').style.display='none'" style="justify-content:flex-start">↑ Cadastro</button>
+          <button class="btn btn-outline" onclick="openUpload('vendas');document.getElementById('mobileMenu').style.display='none'" style="justify-content:flex-start">↑ Vendas Realizadas</button>
+          <button class="btn btn-outline" onclick="openUpload('canceladas');document.getElementById('mobileMenu').style.display='none'" style="justify-content:flex-start">↑ Canceladas</button>
+          <button class="btn btn-outline" onclick="openUpload('anuncios');document.getElementById('mobileMenu').style.display='none'" style="justify-content:flex-start">↑ Anúncios ML</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-outline" id="btnMobileMenu" onclick="document.getElementById('mobileMenu').style.display='block'" style="display:none">☰</button>
     <span class="lupdate" id="lastUpdate">carregando...</span>
     <span class="sbadge sb-base" id="srcBadge"></span>
     <button class="btn btn-outline" onclick="openUpload('fotos')">↑ Fotos</button>
@@ -141,6 +265,8 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
   <button class="tab active" onclick="switchTab('fotos',this)">📋 Cadastro</button>
   <button class="tab" onclick="switchTab('vendas',this)">✅ Vendas Realizadas</button>
   <button class="tab" onclick="switchTab('canceladas',this)">❌ Canceladas</button>
+  <button class="tab" onclick="switchTab('taxacanc',this)">📉 Taxa Cancelamento</button>
+  <button class="tab" onclick="switchTab('desconto',this)">🏷️ Desconto por Canal</button>
   <button class="tab" onclick="switchTab('anuncios',this)">🛒 Anúncios ML</button>
   <button class="tab" onclick="switchTab('abc',this)">📊 Curva ABC</button>
 </div>
@@ -243,15 +369,6 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
     <div id="dashV" style="display:none">
       <div class="kpi-grid" id="kpiV"></div>
 
-      <!-- Desconto médio por canal -->
-      <div class="card" style="margin-bottom:1.5rem">
-        <div class="card-hdr">
-          <span class="card-title">Desconto médio por canal</span>
-          <span style="font-size:12px;color:var(--muted)">R$ e % por venda</span>
-        </div>
-        <div id="descontoConteudo"></div>
-      </div>
-
       <div class="controls">
         <label>Mês:</label><select id="selMV"></select>
         <label>Canal:</label>
@@ -297,15 +414,6 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
     <div id="dashC" style="display:none">
       <div class="kpi-grid" id="kpiC"></div>
 
-      <!-- Taxa de cancelamento -->
-      <div class="card" id="cardTaxaCancC" style="margin-bottom:1.5rem">
-        <div class="card-hdr">
-          <span class="card-title">Taxa de Cancelamento</span>
-          <span style="font-size:12px;color:var(--muted)">Canceladas vs Realizadas</span>
-        </div>
-        <div id="taxaCancConteudoC"></div>
-      </div>
-
       <div class="controls">
         <label>Mês:</label><select id="selMC"></select>
         <label>Canal:</label>
@@ -346,6 +454,38 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
       <div style="font-size:48px;margin-bottom:1rem">❌</div>
       <div style="font-size:15px;font-weight:500;margin-bottom:8px">Nenhuma venda cancelada</div>
       <div style="font-size:13px;color:var(--muted)">Faça upload do relatório de cancelamentos clicando em <strong>↑ Canceladas</strong></div>
+    </div>
+  </div>
+
+  <!-- ABA TAXA DE CANCELAMENTO -->
+  <div class="page" id="page-taxacanc">
+    <div style="padding-top:1.5rem" id="dashTaxa">
+      <div class="controls">
+        <label>Mês:</label><select id="selMesTaxa"></select>
+        <label>Canal:</label>
+        <select id="selCanalTaxa">
+          <option value="all">Todos</option>
+          <option value="Balcão">Balcão</option>
+          <option value="Mercado Livre">Mercado Livre</option>
+        </select>
+      </div>
+      <div id="taxaCancConteudoTab"></div>
+    </div>
+  </div>
+
+  <!-- ABA DESCONTO POR CANAL -->
+  <div class="page" id="page-desconto">
+    <div style="padding-top:1.5rem" id="dashDesconto">
+      <div class="controls">
+        <label>Mês:</label><select id="selMesDesconto"></select>
+        <label>Canal:</label>
+        <select id="selCanalDesconto">
+          <option value="all">Todos</option>
+          <option value="Balcão">Balcão</option>
+          <option value="Mercado Livre">Mercado Livre</option>
+        </select>
+      </div>
+      <div id="descontoConteudoTab"></div>
     </div>
   </div>
 
@@ -584,12 +724,12 @@ async function boot(){
   else await ghLoad('data.json',hdrs,d=>{fotosDaily=d.rows;fotosProds=d.produtos||[];setHdr('Atualizado: '+d.updated,'base');initF();showBtnPub();},()=>{document.getElementById('loadF').textContent='Nenhum dado. Faça upload do .xlsx.';});
 
   const sv=tryLS(LS_V);
-  if(sv){vendasDaily=sv.rows;vendasProds=sv.produtos||[];initV();showBtnPub();renderDesconto();}
-  else await ghLoad('vendas.json',hdrs,d=>{vendasDaily=d.rows;vendasProds=d.produtos||[];initV();showBtnPub();renderDesconto();},()=>{document.getElementById('loadV').textContent='Nenhum dado. Faça upload do .xlsx.';});
+  if(sv){vendasDaily=sv.rows;vendasProds=sv.produtos||[];initV();showBtnPub();}
+  else await ghLoad('vendas.json',hdrs,d=>{vendasDaily=d.rows;vendasProds=d.produtos||[];initV();showBtnPub();},()=>{document.getElementById('loadV').textContent='Nenhum dado. Faça upload do .xlsx.';});
 
   const sc=tryLS(LS_C);
-  if(sc){cancelDaily=sc.rows;cancelProds=sc.produtos||[];initC();showBtnPub();renderTaxaCancelamento('V');}
-  else await ghLoad('canceladas.json',hdrs,d=>{cancelDaily=d.rows;cancelProds=d.produtos||[];initC();showBtnPub();renderTaxaCancelamento('V');},()=>{initCEmpty();});
+  if(sc){cancelDaily=sc.rows;cancelProds=sc.produtos||[];initC();showBtnPub();}
+  else await ghLoad('canceladas.json',hdrs,d=>{cancelDaily=d.rows;cancelProds=d.produtos||[];initC();showBtnPub();},()=>{initCEmpty();});
 
   // anúncios: sempre do servidor, nunca localStorage (arquivo 1MB+)
   await ghLoad('anuncios.json',hdrs,d=>{anunciosProds=d.produtos||[];initA();},()=>{initAEmpty();});
@@ -638,7 +778,15 @@ function switchTab(n,el){
   // re-renderiza gráficos ao entrar na aba (canvas pode ter ficado oculto)
   if(n==='fotos'&&fotosDaily.length)renderF();
   if(n==='vendas'&&vendasDaily.length)renderV();
-  if(n==='canceladas'&&cancelDaily.length){renderC();renderTaxaCancelamento('C');}
+  if(n==='canceladas'&&cancelDaily.length){renderC();}
+  if(n==='taxacanc'){
+    buildSel('selMesTaxa',[...new Set(([...vendasProds,...cancelProds]).map(r=>getMes(r.d)).filter(Boolean))]);
+    renderTaxaTab();
+  }
+  if(n==='desconto'){
+    buildSel('selMesDesconto',[...new Set(vendasProds.map(r=>getMes(r.d)).filter(Boolean))]);
+    renderDescontoTab();
+  }
   if(n==='anuncios'){
     if(anunciosProds.length){buildMesSelectA();renderA();}
     else initAEmpty();
@@ -878,9 +1026,9 @@ function renderV(){
   pV=1;
   document.getElementById('tagV').textContent=prods.length+' itens';
   renderPageV(prods);
-  renderDesconto();
+  
   // atualiza taxa de cancelamento com o mesmo filtro
-  renderTaxaCancelamento('V');
+  
 }
 
 function updFilterBadgeV(){
@@ -1272,6 +1420,10 @@ document.getElementById('selCanal').addEventListener('change',()=>{clickCanalV=n
 document.getElementById('selCanalC').addEventListener('change',()=>{clickCanalC=null;renderC();});
 document.getElementById('searchV').addEventListener('input',renderV);
 document.getElementById('searchC').addEventListener('input',renderC);
+document.getElementById('selMesTaxa').addEventListener('change', renderTaxaTab);
+document.getElementById('selCanalTaxa').addEventListener('change', renderTaxaTab);
+document.getElementById('selMesDesconto').addEventListener('change', renderDescontoTab);
+document.getElementById('selCanalDesconto').addEventListener('change', renderDescontoTab);
 document.getElementById('selMesA').addEventListener('change',()=>{clickStatusA=null;clickListagemA=null;renderA();});
 document.getElementById('selStatusA').addEventListener('change',()=>{clickStatusA=null;renderA();});
 document.getElementById('selMesABC').addEventListener('change',renderABC);
@@ -1403,7 +1555,7 @@ function renderC(){
   pC=1;
   document.getElementById('tagC').textContent=prods.length+' itens';
   renderPageC(prods);
-  renderTaxaCancelamento('C');
+  
 }
 
 function updFilterBadgeC(){
@@ -1485,7 +1637,7 @@ function procCanceladas(rows){
   const obj={rows:mergedDaily,produtos:mergedProds,updated:now};
   setLS(LS_C,obj);pendPub.canceladas=obj;cancelDaily=mergedDaily;cancelProds=mergedProds;
   setP(100,'Concluído!');
-  setTimeout(()=>{closeUpload();initC();showBtnPub();renderTaxaCancelamento('V');showToast('✓ Canceladas: '+mergedProds.length+' itens no total',false,4000);},400);
+  setTimeout(()=>{closeUpload();initC();showBtnPub();showToast('✓ Canceladas: '+mergedProds.length+' itens no total',false,4000);},400);
 }
 
 
@@ -2131,26 +2283,22 @@ function renderPageABC(){
 ════════════════════════════════ */
 let cTaxa = null;
 
-function renderTaxaCancelamento(origem){
-  // origem='V' para aba vendas, 'C' para aba canceladas
-  const sufixo = origem==='C' ? 'C' : '';
-  const elId = 'taxaCancConteudo' + sufixo;
-  const el = document.getElementById(elId);
+/* ════════════════════════════════
+   ABA TAXA DE CANCELAMENTO
+════════════════════════════════ */
+function renderTaxaTab(){
+  const el = document.getElementById('taxaCancConteudoTab');
   if(!el) return;
 
-  // precisa de dados dos dois lados
-  if(!vendasProds.length){
-    el.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0">Carregue os dados de Vendas Realizadas.</div>';
-    return;
-  }
-  if(!cancelProds.length){
-    el.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0">Carregue os dados de Vendas Canceladas para ver a taxa de cancelamento.</div>';
+  if(!vendasProds.length || !cancelProds.length){
+    el.innerHTML=`<div class="card"><div style="font-size:13px;color:var(--muted);padding:1rem">
+      ${!vendasProds.length?'Carregue os dados de <strong>Vendas Realizadas</strong>.':'Carregue os dados de <strong>Vendas Canceladas</strong>.'}
+    </div></div>`;
     return;
   }
 
-  // aplica filtro do contexto correto
-  const mes   = origem==='C' ? document.getElementById('selMC').value    : document.getElementById('selMV').value;
-  const canal = origem==='C' ? document.getElementById('selCanalC').value : document.getElementById('selCanal').value;
+  const mes   = document.getElementById('selMesTaxa').value;
+  const canal = document.getElementById('selCanalTaxa').value;
 
   const filtV = vendasProds.filter(r=>{
     if(mes!=='all'&&getMes(r.d)!==mes)return false;
@@ -2163,196 +2311,155 @@ function renderTaxaCancelamento(origem){
     return true;
   });
 
-  const fatV   = filtV.reduce((s,r)=>s+r.tot,0);
-  const fatC   = filtC.reduce((s,r)=>s+r.tot,0);
-  const fatT   = fatV + fatC;
-  const txFat  = fatT  ? Math.round(fatC/fatT*1000)/10  : 0;
-  const txQtd  = (filtV.length+filtC.length) ? Math.round(filtC.length/(filtV.length+filtC.length)*1000)/10 : 0;
+  const fatV  = filtV.reduce((s,r)=>s+r.tot,0);
+  const fatC  = filtC.reduce((s,r)=>s+r.tot,0);
+  const fatT  = fatV+fatC;
+  const txFat = fatT  ? Math.round(fatC/fatT*1000)/10 : 0;
+  const txQtd = (filtV.length+filtC.length) ? Math.round(filtC.length/(filtV.length+filtC.length)*1000)/10 : 0;
+  const canais= ['Balcão','Mercado Livre'];
+  const corTaxa = t => t<5?'var(--green)':t<15?'var(--amber)':'var(--red)';
 
-  // por canal
-  const canais = ['Balcão','Mercado Livre'];
   const canalData = canais.map(c=>({
-    canal: c,
-    fatV:  filtV.filter(r=>r.canal===c).reduce((s,r)=>s+r.tot,0),
-    fatC:  filtC.filter(r=>r.canal===c).reduce((s,r)=>s+r.tot,0),
-    qtdV:  filtV.filter(r=>r.canal===c).length,
-    qtdC:  filtC.filter(r=>r.canal===c).length,
-  })).map(c=>({
-    ...c,
-    txFat: (c.fatV+c.fatC) ? Math.round(c.fatC/(c.fatV+c.fatC)*1000)/10 : 0,
-    txQtd: (c.qtdV+c.qtdC) ? Math.round(c.qtdC/(c.qtdV+c.qtdC)*1000)/10 : 0,
+    canal:c,
+    fatV: filtV.filter(r=>r.canal===c).reduce((s,r)=>s+r.tot,0),
+    fatC: filtC.filter(r=>r.canal===c).reduce((s,r)=>s+r.tot,0),
+    qtdV: filtV.filter(r=>r.canal===c).length,
+    qtdC: filtC.filter(r=>r.canal===c).length,
+  })).map(c=>({...c,
+    txFat:(c.fatV+c.fatC)?Math.round(c.fatC/(c.fatV+c.fatC)*1000)/10:0,
+    txQtd:(c.qtdV+c.qtdC)?Math.round(c.qtdC/(c.qtdV+c.qtdC)*1000)/10:0,
   }));
 
-  // cor da taxa — verde < 5%, amarelo < 15%, vermelho >= 15%
-  const corTaxa = t => t < 5 ? 'var(--green)' : t < 15 ? 'var(--amber)' : 'var(--red)';
-
-  el.innerHTML = `
-    <div class="taxa-grid">
-      <div class="taxa-item" style="--kc:var(--green)">
-        <div class="taxa-label">Faturamento Realizado</div>
-        <div class="taxa-val">R$ ${fmt(fatV)}</div>
-        <div class="taxa-sub">${filtV.length} vendas</div>
+  el.innerHTML=`
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Taxa de Cancelamento</span><span style="font-size:12px;color:var(--muted)">Canceladas vs Realizadas</span></div>
+      <div class="taxa-grid">
+        <div class="taxa-item" style="--kc:var(--green)"><div class="taxa-label">Faturamento Realizado</div><div class="taxa-val">R$ ${fmt(fatV)}</div><div class="taxa-sub">${filtV.length} vendas</div></div>
+        <div class="taxa-item" style="--kc:var(--red)"><div class="taxa-label">Faturamento Cancelado</div><div class="taxa-val">R$ ${fmt(fatC)}</div><div class="taxa-sub">${filtC.length} cancelamentos</div></div>
+        <div class="taxa-item" style="--kc:${corTaxa(txFat)}"><div class="taxa-label">Taxa Cancel. (R$)</div><div class="taxa-val">${txFat}%</div><div class="taxa-sub">do faturamento total</div></div>
+        <div class="taxa-item" style="--kc:${corTaxa(txQtd)}"><div class="taxa-label">Taxa Cancel. (qtd)</div><div class="taxa-val">${txQtd}%</div><div class="taxa-sub">das transações totais</div></div>
+        <div class="taxa-item" style="--kc:var(--muted)"><div class="taxa-label">Receita Perdida</div><div class="taxa-val" style="color:var(--red)">- R$ ${fmt(fatC)}</div><div class="taxa-sub">impacto no caixa</div></div>
       </div>
-      <div class="taxa-item" style="--kc:var(--red)">
-        <div class="taxa-label">Faturamento Cancelado</div>
-        <div class="taxa-val">R$ ${fmt(fatC)}</div>
-        <div class="taxa-sub">${filtC.length} cancelamentos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:.5rem">
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.6px">Taxa por canal (R$)</div>
+          ${canalData.map(c=>`
+            <div style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                <span>${c.canal}</span><span style="color:${corTaxa(c.txFat)};font-weight:600;font-family:'DM Mono',monospace">${c.txFat}%</span>
+              </div>
+              <div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden">
+                <div style="height:100%;width:${Math.min(c.txFat,100)}%;background:${corTaxa(c.txFat)};border-radius:4px"></div>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">R$ ${fmt(c.fatC)} de R$ ${fmt(c.fatV+c.fatC)}</div>
+            </div>`).join('')}
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.6px">Taxa por canal (qtd)</div>
+          ${canalData.map(c=>`
+            <div style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                <span>${c.canal}</span><span style="color:${corTaxa(c.txQtd)};font-weight:600;font-family:'DM Mono',monospace">${c.txQtd}%</span>
+              </div>
+              <div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden">
+                <div style="height:100%;width:${Math.min(c.txQtd,100)}%;background:${corTaxa(c.txQtd)};border-radius:4px"></div>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.qtdC} de ${c.qtdV+c.qtdC} transações</div>
+            </div>`).join('')}
+        </div>
       </div>
-      <div class="taxa-item" style="--kc:${corTaxa(txFat)}">
-        <div class="taxa-label">Taxa Cancelamento (R$)</div>
-        <div class="taxa-val">${txFat}%</div>
-        <div class="taxa-sub">do faturamento total</div>
-      </div>
-      <div class="taxa-item" style="--kc:${corTaxa(txQtd)}">
-        <div class="taxa-label">Taxa Cancelamento (qtd)</div>
-        <div class="taxa-val">${txQtd}%</div>
-        <div class="taxa-sub">das transações totais</div>
-      </div>
-      <div class="taxa-item" style="--kc:var(--muted)">
-        <div class="taxa-label">Receita Perdida</div>
-        <div class="taxa-val" style="color:var(--red)">- R$ ${fmt(fatC)}</div>
-        <div class="taxa-sub">impacto real no caixa</div>
-      </div>
-    </div>
-
-    <!-- gráfico por canal -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:.5rem">
-      <div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.6px">Taxa por canal (R$)</div>
-        ${canalData.map(c=>`
-          <div style="margin-bottom:10px">
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-              <span style="color:var(--text)">${c.canal}</span>
-              <span style="color:${corTaxa(c.txFat)};font-weight:600;font-family:'DM Mono',monospace">${c.txFat}%</span>
-            </div>
-            <div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden">
-              <div style="height:100%;width:${Math.min(c.txFat,100)}%;background:${corTaxa(c.txFat)};border-radius:4px;transition:width .4s"></div>
-            </div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px">R$ ${fmt(c.fatC)} cancelado de R$ ${fmt(c.fatV+c.fatC)} total</div>
-          </div>`).join('')}
-      </div>
-      <div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.6px">Taxa por canal (quantidade)</div>
-        ${canalData.map(c=>`
-          <div style="margin-bottom:10px">
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-              <span style="color:var(--text)">${c.canal}</span>
-              <span style="color:${corTaxa(c.txQtd)};font-weight:600;font-family:'DM Mono',monospace">${c.txQtd}%</span>
-            </div>
-            <div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden">
-              <div style="height:100%;width:${Math.min(c.txQtd,100)}%;background:${corTaxa(c.txQtd)};border-radius:4px;transition:width .4s"></div>
-            </div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.qtdC} de ${c.qtdV+c.qtdC} transações</div>
-          </div>`).join('')}
-      </div>
-    </div>
-  `;
+    </div>`;
 }
 
-
 /* ════════════════════════════════
-   DESCONTO MÉDIO POR CANAL
+   ABA DESCONTO POR CANAL
 ════════════════════════════════ */
-function renderDesconto(){
-  const el = document.getElementById('descontoConteudo');
+function renderDescontoTab(){
+  const el = document.getElementById('descontoConteudoTab');
   if(!el) return;
+
   if(!vendasProds.length){
-    el.innerHTML='<div style="font-size:13px;color:var(--muted);padding:.5rem 0">Carregue os dados de Vendas Realizadas.</div>';
+    el.innerHTML='<div class="card"><div style="font-size:13px;color:var(--muted);padding:1rem">Carregue os dados de <strong>Vendas Realizadas</strong>.</div></div>';
     return;
   }
 
-  const mes = document.getElementById('selMV').value;
+  const mes   = document.getElementById('selMesDesconto').value;
+  const canal = document.getElementById('selCanalDesconto').value;
 
-  // filtra por mês
-  const prods = mes==='all' ? vendasProds : vendasProds.filter(r=>getMes(r.d)===mes);
+  const prods = vendasProds.filter(r=>{
+    if(mes!=='all'&&getMes(r.d)!==mes)return false;
+    if(canal!=='all'&&r.canal!==canal)return false;
+    return true;
+  });
 
-  // agrupa por canal e mês
   const canais = ['Balcão','Mercado Livre'];
-  const getMesLabel = m => {
-    const nm=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    const[mm,yy]=m.split('/'); return nm[parseInt(mm)]+' '+yy;
-  };
-
-  // stats gerais por canal
-  const stats = canais.map(canal=>{
-    const items = prods.filter(r=>r.canal===canal);
-    const comDesc = items.filter(r=>r.desc>0);
-    const totalDesc = items.reduce((s,r)=>s+r.desc,0);
-    const totalVal  = items.reduce((s,r)=>s+(r.val||0),0);
-    const mediaDescR = items.length ? totalDesc/items.length : 0;
-    const mediaDescPct = totalVal ? totalDesc/totalVal*100 : 0;
-    const txComDesc = items.length ? comDesc.length/items.length*100 : 0;
-    return {canal, items:items.length, comDesc:comDesc.length, totalDesc, mediaDescR, mediaDescPct, txComDesc};
-  });
-
-  // por mês para o gráfico
-  const meses = [...new Set(vendasProds.map(r=>getMes(r.d)).filter(Boolean))].sort((a,b)=>{
-    const[ma,ya]=a.split('/');const[mb,yb]=b.split('/');
-    return (+ya*100+ +ma)-(+yb*100+ +mb);
-  });
-
   const corCanal = c => c==='Balcão'?'var(--green)':'var(--blue)';
-  const corDesc  = pct => pct < 5 ? 'var(--green)' : pct < 15 ? 'var(--amber)' : 'var(--red)';
+  const corDesc  = pct => pct<5?'var(--green)':pct<15?'var(--amber)':'var(--red)';
+  const getMesLabel = m=>{const nm=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];const[mm,yy]=m.split('/');return nm[parseInt(mm)]+' '+yy;};
 
-  el.innerHTML = `
-    <!-- KPIs por canal -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:1.25rem">
-      ${stats.map(s=>`
-        <div style="background:var(--surface2);border-radius:var(--r);padding:1rem;border-left:3px solid ${corCanal(s.canal)}">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">${s.canal}</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Desc. médio (R$)</div>
-              <div style="font-size:18px;font-weight:600;font-family:'DM Mono',monospace;color:${corDesc(s.mediaDescPct)}">R$ ${fmt(s.mediaDescR)}</div>
-            </div>
-            <div>
-              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Desc. médio (%)</div>
-              <div style="font-size:18px;font-weight:600;font-family:'DM Mono',monospace;color:${corDesc(s.mediaDescPct)}">${s.mediaDescPct.toFixed(1)}%</div>
-            </div>
-            <div>
-              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Total descontado</div>
-              <div style="font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:var(--amber)">R$ ${fmt(s.totalDesc)}</div>
-            </div>
-            <div>
-              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Vendas c/ desconto</div>
-              <div style="font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:var(--muted)">${s.comDesc} / ${s.items} (${s.txComDesc.toFixed(0)}%)</div>
-            </div>
-          </div>
-        </div>`).join('')}
-    </div>
+  const stats = canais.map(c=>{
+    const items=prods.filter(r=>r.canal===c);
+    const comDesc=items.filter(r=>r.desc>0);
+    const totalDesc=items.reduce((s,r)=>s+r.desc,0);
+    const totalVal=items.reduce((s,r)=>s+(r.val||0),0);
+    const mediaDescR=items.length?totalDesc/items.length:0;
+    const mediaDescPct=totalVal?totalDesc/totalVal*100:0;
+    const txComDesc=items.length?comDesc.length/items.length*100:0;
+    return{canal:c,items:items.length,comDesc:comDesc.length,totalDesc,mediaDescR,mediaDescPct,txComDesc};
+  });
 
-    <!-- Evolução mensal do desconto médio % -->
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.6px">Evolução mensal — desconto médio (%)</div>
-    <div style="display:flex;flex-direction:column;gap:6px">
-      ${meses.map(m=>{
-        const bal = vendasProds.filter(r=>getMes(r.d)===m&&r.canal==='Balcão');
-        const ml  = vendasProds.filter(r=>getMes(r.d)===m&&r.canal==='Mercado Livre');
-        const pctBal = bal.length ? bal.reduce((s,r)=>s+r.desc,0)/bal.reduce((s,r)=>s+(r.val||0),0)*100 : 0;
-        const pctML  = ml.length  ? ml.reduce((s,r)=>s+r.desc,0)/ml.reduce((s,r)=>s+(r.val||0),0)*100  : 0;
-        const maxPct = 30; // escala máxima visual
-        return `
-          <div style="display:grid;grid-template-columns:70px 1fr 1fr;gap:8px;align-items:center">
+  const meses = mes!=='all' ? [mes] : [...new Set(vendasProds.map(r=>getMes(r.d)).filter(Boolean))].sort((a,b)=>{
+    const[ma,ya]=a.split('/');const[mb,yb]=b.split('/');return(+ya*100+ +ma)-(+yb*100+ +mb);
+  });
+
+  el.innerHTML=`
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Desconto médio por canal</span><span style="font-size:12px;color:var(--muted)">R$ e % por venda</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:1.25rem">
+        ${stats.map(s=>`
+          <div style="background:var(--surface2);border-radius:var(--r);padding:1rem;border-left:3px solid ${corCanal(s.canal)}">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">${s.canal}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Desc. médio (R$)</div>
+                <div style="font-size:18px;font-weight:600;font-family:'DM Mono',monospace;color:${corDesc(s.mediaDescPct)}">R$ ${fmt(s.mediaDescR)}</div></div>
+              <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Desc. médio (%)</div>
+                <div style="font-size:18px;font-weight:600;font-family:'DM Mono',monospace;color:${corDesc(s.mediaDescPct)}">${s.mediaDescPct.toFixed(1)}%</div></div>
+              <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Total descontado</div>
+                <div style="font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:var(--amber)">R$ ${fmt(s.totalDesc)}</div></div>
+              <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Vendas c/ desconto</div>
+                <div style="font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:var(--muted)">${s.comDesc}/${s.items} (${s.txComDesc.toFixed(0)}%)</div></div>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.6px">Evolução mensal — desconto médio (%)</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${meses.map(m=>{
+          const bal=prods.filter(r=>getMes(r.d)===m&&r.canal==='Balcão');
+          const ml =prods.filter(r=>getMes(r.d)===m&&r.canal==='Mercado Livre');
+          const pctBal=bal.length?bal.reduce((s,r)=>s+r.desc,0)/bal.reduce((s,r)=>s+(r.val||0),0)*100:0;
+          const pctML =ml.length ?ml.reduce((s,r)=>s+r.desc,0)/ml.reduce((s,r)=>s+(r.val||0),0)*100 :0;
+          return`<div style="display:grid;grid-template-columns:70px 1fr 1fr;gap:8px;align-items:center">
             <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace">${getMesLabel(m)}</div>
             <div style="display:flex;align-items:center;gap:6px">
               <div style="background:var(--surface2);border-radius:3px;height:16px;flex:1;overflow:hidden">
-                <div style="height:100%;width:${Math.min(pctBal/maxPct*100,100)}%;background:var(--green);border-radius:3px;transition:width .3s"></div>
+                <div style="height:100%;width:${Math.min(pctBal/30*100,100)}%;background:var(--green);border-radius:3px"></div>
               </div>
               <span style="font-size:11px;color:var(--green);font-family:'DM Mono',monospace;min-width:36px">${pctBal.toFixed(1)}%</span>
             </div>
             <div style="display:flex;align-items:center;gap:6px">
               <div style="background:var(--surface2);border-radius:3px;height:16px;flex:1;overflow:hidden">
-                <div style="height:100%;width:${Math.min(pctML/maxPct*100,100)}%;background:var(--blue);border-radius:3px;transition:width .3s"></div>
+                <div style="height:100%;width:${Math.min(pctML/30*100,100)}%;background:var(--blue);border-radius:3px"></div>
               </div>
               <span style="font-size:11px;color:var(--blue);font-family:'DM Mono',monospace;min-width:36px">${pctML.toFixed(1)}%</span>
             </div>
           </div>`;
-      }).join('')}
-    </div>
-    <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--muted)">
-      <span><span style="display:inline-block;width:10px;height:10px;background:var(--green);border-radius:2px;margin-right:4px"></span>Balcão</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:var(--blue);border-radius:2px;margin-right:4px"></span>Mercado Livre</span>
-    </div>
-  `;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--muted)">
+        <span><span style="display:inline-block;width:10px;height:10px;background:var(--green);border-radius:2px;margin-right:4px"></span>Balcão</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:var(--blue);border-radius:2px;margin-right:4px"></span>Mercado Livre</span>
+      </div>
+    </div>`;
 }
 
 boot();
