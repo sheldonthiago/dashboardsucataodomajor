@@ -757,8 +757,6 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
           <option value="Premium">Premium</option>
           <option value="Clássico">Clássico</option>
         </select>
-        <label>Anunciante:</label>
-        <select id="selAnuncSV"><option value="all">Todos</option></select>
         <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchSV" placeholder="Buscar título ou código..."></div>
         <span class="tag" id="tagSV"></span>
       </div>
@@ -1621,7 +1619,6 @@ document.getElementById('selCriterioRank').addEventListener('change', renderRank
 document.getElementById('selCanalComp').addEventListener('change', renderComparativo);
 document.getElementById('selMesCompDe').addEventListener('change', renderComparativo);
 document.getElementById('selListSV').addEventListener('change', renderSemVenda);
-document.getElementById('selAnuncSV').addEventListener('change', renderSemVenda);
 document.getElementById('searchSV').addEventListener('input', renderSemVenda);
 document.getElementById('selMesCompAte').addEventListener('change', renderComparativo);
 document.getElementById('selCanalDesconto').addEventListener('change', renderDescontoTab);
@@ -3107,23 +3104,14 @@ function renderSemVenda(){
     return;
   }
 
-  // popula select de anunciante
-  const selAnunc = document.getElementById('selAnuncSV');
-  if(selAnunc.options.length<=1){
-    const anunciantes=[...new Set(anunciosProds.filter(p=>p.status==='Ativo').map(p=>p.anunciante).filter(Boolean))].sort();
-    anunciantes.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;selAnunc.appendChild(o);});
-  }
-
-  const listagem  = document.getElementById('selListSV').value;
-  const anunciante= document.getElementById('selAnuncSV').value;
-  const q         = (document.getElementById('searchSV').value||'').toLowerCase().trim();
+  const listagem = document.getElementById('selListSV').value;
+  const q        = (document.getElementById('searchSV').value||'').toLowerCase().trim();
 
   // pega só ativos
   const ativos = anunciosProds.filter(p=>{
     if(p.status!=='Ativo') return false;
     if(listagem!=='all'&&p.listagem!==listagem) return false;
-    if(anunciante!=='all'&&p.anunciante!==anunciante) return false;
-    if(q&&!p.titulo.toLowerCase().includes(q)&&!p.cod.includes(q)) return false;
+    if(q&&!p.titulo.toLowerCase().includes(q)&&!String(p.sku||'').includes(q)) return false;
     return true;
   });
 
@@ -3133,9 +3121,10 @@ function renderSemVenda(){
   const mlCods = new Set(mlVendas.map(r=>String(r.cod||'').trim()).filter(Boolean));
 
   const semVenda = ativos.filter(an=>{
-    const sku = String(an.sku||'').trim();
-    if(!sku) return true; // sem SKU — considera sem venda
-    return !mlCods.has(sku);
+    // tenta sku primeiro, fallback para cod do anuncio
+    const chave = String(an.sku||'').trim() || String(an.cod||'').trim();
+    if(!chave) return true; // sem chave — considera sem venda
+    return !mlCods.has(chave);
   });
 
   const comVenda = ativos.length - semVenda.length;
