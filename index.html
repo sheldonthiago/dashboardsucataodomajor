@@ -351,10 +351,10 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
     <button class="btn btn-outline" id="btnMobileMenu" onclick="document.getElementById('mobileMenu').style.display='block'" style="display:none">☰</button>
     <span class="lupdate" id="lastUpdate">carregando...</span>
     <span class="sbadge sb-base" id="srcBadge"></span>
-    <button class="btn btn-outline" onclick="openUpload('fotos')">↑ Fotos</button>
-    <button class="btn btn-outline" onclick="openUpload('vendas')">↑ Vendas</button>
-    <button class="btn btn-outline" onclick="openUpload('canceladas')">↑ Canceladas</button>
-    <button class="btn btn-outline" onclick="openUpload('anuncios')">↑ Anúncios</button>
+    <button class="btn btn-outline" onclick="openUpload('fotos')">↑ Cadastro IBR</button>
+    <button class="btn btn-outline" onclick="openUpload('vendas')">↑ Vendas Realizadas</button>
+    <button class="btn btn-outline" onclick="openUpload('canceladas')">↑ Vendas Canceladas</button>
+    <button class="btn btn-outline" onclick="openUpload('anuncios')">↑ Anúncios ML</button>
     <button class="btn btn-blue" id="btnPub" style="display:none" onclick="openPublish()">☁ Publicar</button>
     <button class="btn btn-outline" onclick="openToken()">⚙</button>
   </div>
@@ -362,9 +362,9 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
 
 <!-- DESKTOP: abas horizontais -->
 <div class="tabs" id="desktopTabs">
-  <button class="tab active" onclick="switchTab('fotos',this)">📋 Cadastro</button>
+  <button class="tab active" onclick="switchTab('fotos',this)">📋 Cadastro IBR</button>
   <button class="tab" onclick="switchTab('vendas',this)">✅ Vendas Realizadas</button>
-  <button class="tab" onclick="switchTab('canceladas',this)">❌ Canceladas</button>
+  <button class="tab" onclick="switchTab('canceladas',this)">❌ Vendas Canceladas</button>
   <button class="tab" onclick="switchTab('taxacanc',this)">📉 Taxa Cancelamento</button>
   <button class="tab" onclick="switchTab('desconto',this)">🏷️ Desconto por Canal</button>
   <button class="tab" onclick="switchTab('anuncios',this)">🛒 Anúncios ML</button>
