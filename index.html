@@ -410,9 +410,9 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
     <button class="mclose" onclick="closeUpload()">×</button>
     <h3 id="upTitle">Carregar relatório</h3>
     <p id="upDesc"></p>
-    <div class="dropzone" id="dz"><p>Arraste o .xlsx aqui<br>ou clique para selecionar</p></div>
+    <label class="dropzone" id="dz" for="fi"><p id="dzText">Arraste o .xlsx aqui<br>ou clique para selecionar</p></label>
     <label class="btn btn-green" for="fi" style="display:block;text-align:center">Selecionar arquivo</label>
-    <input type="file" class="fi" id="fi" accept=".xlsx,.xls">
+    <input type="file" class="fi" id="fi" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
     <div class="pw" id="pw"><div class="pb-bg"><div class="pb-fill" id="pbf"></div></div><div class="plabel" id="pbl"></div></div>
   </div>
 </div>
@@ -1735,7 +1735,11 @@ const dz=document.getElementById('dz');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files[0])procFile(e.dataTransfer.files[0]);});
-dz.addEventListener('click',()=>document.getElementById('fi').click());
+// texto adaptado para mobile (sem drag & drop)
+if(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){
+  const dzt=document.getElementById('dzText');
+  if(dzt) dzt.innerHTML='Toque aqui para<br>selecionar o arquivo';
+}
 
 // reset filtro dinâmico quando selects/search mudam
 document.getElementById('selMF').addEventListener('change',()=>{clickDiaF=null;renderF();});
