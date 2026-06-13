@@ -95,9 +95,9 @@ button[onclick*="openUpload"]{display:inline-flex}
 .nav-item:last-child{border-bottom:none}
 .nav-item:hover{background:var(--surface2);color:var(--text)}
 .nav-item.active{color:var(--green);background:var(--green-dim);font-weight:600}
-.overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.88);align-items:center;justify-content:center}
 .overlay.open{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:2rem;max-width:460px;width:90%;position:relative}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:2rem;max-width:460px;width:90%;position:relative;max-height:90dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .modal h3{font-size:16px;font-weight:600;margin-bottom:6px}.modal p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px}
 .mclose{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer}
 .dropzone{border:1.5px dashed var(--border2);border-radius:var(--r);padding:1.75rem;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:14px;text-align:center}
@@ -410,9 +410,11 @@ footer{text-align:center;padding:2rem;font-size:12px;color:var(--muted);border-t
     <button class="mclose" onclick="closeUpload()">×</button>
     <h3 id="upTitle">Carregar relatório</h3>
     <p id="upDesc"></p>
-    <label class="dropzone" id="dz" for="fi"><p id="dzText">Arraste o .xlsx aqui<br>ou clique para selecionar</p></label>
-    <label class="btn btn-green" for="fi" style="display:block;text-align:center">Selecionar arquivo</label>
-    <input type="file" class="fi" id="fi" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
+    <div class="dropzone" id="dz"><p id="dzText">Arraste o .xlsx aqui<br>ou clique para selecionar</p></div>
+    <div style="position:relative;overflow:hidden;border-radius:8px;display:block;margin-bottom:4px">
+      <div class="btn btn-green" style="display:block;text-align:center;pointer-events:none">Selecionar arquivo</div>
+      <input type="file" id="fi" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" style="position:absolute;top:0;left:0;opacity:0;width:300%;height:100%;cursor:pointer;font-size:100px" onchange="if(this.files[0])procFile(this.files[0]);this.value='';">
+    </div>
     <div class="pw" id="pw"><div class="pb-bg"><div class="pb-fill" id="pbf"></div></div><div class="plabel" id="pbl"></div></div>
   </div>
 </div>
@@ -1439,6 +1441,7 @@ function openUpload(t){
 function closeUpload(){document.getElementById('ovUpload').classList.remove('open');}
 
 function procFile(file){
+  if(typeof XLSX==='undefined'){alert('Biblioteca XLSX não carregou. Verifique sua conexão e recarregue a página.');return;}
   setP(10,'Lendo arquivo...');
   const r=new FileReader();
   r.onload=e=>{
@@ -1448,8 +1451,9 @@ function procFile(file){
       const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
       setP(65,'Processando...');
       upType==='fotos'?procFotos(rows):upType==='vendas'?procVendas(rows):upType==='canceladas'?procCanceladas(rows):procAnuncios(rows);
-    }catch(err){setP(0,'');alert('Erro: '+err.message);}
+    }catch(err){setP(0,'');alert('Erro ao processar: '+err.message);}
   };
+  r.onerror=()=>alert('Erro ao ler o arquivo. Tente novamente.');
   r.readAsArrayBuffer(file);
 }
 
@@ -1730,15 +1734,17 @@ let tt;
 function showToast(msg,err=false,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.className=err?'err show':'show';clearTimeout(tt);tt=setTimeout(()=>t.className='',dur);}
 
 /* ── EVENTOS ── */
-document.getElementById('fi').addEventListener('change',e=>{if(e.target.files[0])procFile(e.target.files[0]);e.target.value='';});
+// drag & drop no dropzone (desktop)
 const dz=document.getElementById('dz');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files[0])procFile(e.dataTransfer.files[0]);});
+dz.addEventListener('click',()=>document.getElementById('fi').click());
 // texto adaptado para mobile (sem drag & drop)
 if(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){
   const dzt=document.getElementById('dzText');
-  if(dzt) dzt.innerHTML='Toque aqui para<br>selecionar o arquivo';
+  if(dzt){dzt.innerHTML='Toque no botão abaixo<br>para selecionar o arquivo';}
+  dz.style.display='none';
 }
 
 // reset filtro dinâmico quando selects/search mudam
